@@ -1,28 +1,12 @@
 #coding: utf-8
-__all__ = [
-           'retrieve_kw',
-           'checkForUnusedVars',
-           'str_to_class',
-           'csvStr2List',
-           'get_attributes',
-           'printArgs',
-           'list_to_stdvector',
-           'stdvector_to_list',
-           'progressbar',
-           'appendToOutput',
-           'traverse',
-           'expandFolders',
-           'expandPath',
-           'Holder',
-           'checkExtension',
-           'ensureExtension',
-           'changeExtension',
-           'mkdir_p',
-           'measureLoopTime',
-           'measureCallTime',
-
-           ]
-
+__all__ = ['Include', 'include', 'str_to_class', 'Roc', 'calcSP',
+           'csvStr2List', 'floatFromStr', 'geomean', 'get_attributes',
+           'mean',  'printArgs', 'reshape', 'reshape_to_array',
+           'stdvector_to_list','list_to_stdvector', 'trunc_at', 'progressbar',
+           'select', 'timed', 'getFilters', 'start_after', 'appendToOutput',
+           'apply_sort', 'scale10', 'measureLoopTime', 'keyboard', 
+           'is_tool', 'secureExtractNpItem', 'emptyArgumentsPrintHelp', 
+           'os_environ_get', 'measureCallTime', 'grouper',]
 
 import re, os, __main__
 import sys
@@ -32,32 +16,44 @@ import cPickle
 import gzip
 import inspect
 import numpy as np
+
 from Gaugi.types import NotSet
+from Gaugi.Configure import RCM_NO_COLOR, RCM_GRID_ENV
 
-def retrieve_kw( kw, key, default = NotSet ):
+loadedEnvFile = False
+def sourceEnvFile():
   """
-  Use together with NotSet to have only one default value for your job
-  properties.
+    Emulate source new_env_file.sh on python environment.
   """
-  if not key in kw or kw[key] is NotSet:
-    kw[key] = default
-  return kw.pop(key)
-
-
- 
-def checkForUnusedVars(d, fcn = None):
-  """
-    Checks if dict @d has unused properties and print them as warnings
-  """
-  for key in d.keys():
-    if d[key] is NotSet: continue
-    msg = 'Obtained not needed parameter: %s' % key
-    if fcn:
-      fcn(msg)
-    else:
-      print 'WARNING:%s' % msg
-
-
+  try:
+    from Gaugi.messenger import Logger
+    logger = Logger.getModuleLogger(__name__)
+    import os, sys
+    global loadedEnvFile
+    if not loadedEnvFile:
+      with open(os.path.expandvars('$ROOTCOREBIN/../FastNetTool/cmt/new_env_file.sh'),'r') as f:
+        lines = f.readlines()
+        lineparser = re.compile(r'test "\$\{(?P<shellVar>[A-Z1-9]*)#\*(?P<addedPath>\S+)\}" = "\$\{(?P=shellVar)\}" && export (?P=shellVar)=\$(?P=shellVar):(?P=addedPath) || true')
+        for line in lines:
+          m = lineparser.match(line)
+          if m:
+            shellVar = m.group('shellVar')
+            if shellVar != 'PYTHONPATH':
+              continue
+            addedPath = os.path.expandvars(m.group('addedPath'))
+            if not addedPath:
+              logger.warning("Couldn't retrieve added path on line \"%s\".", line)
+              continue
+            if not os.path.exists(addedPath):
+              logger.warning("Couldn't find following path \"%s\".", addedPath)
+              continue
+            if not addedPath in os.environ[shellVar]:
+              sys.path.append(addedPath)
+              logger.info("Successfully added path: \"%s\".", line)
+      loadedEnvFile=True
+  except IOError:
+    raise RuntimeError("Cannot find new_env_file.sh, did you forget to set environment or compile the package?")
+  
 def str_to_class(module_name, class_name):
   try:
     import importlib
@@ -74,10 +70,13 @@ def str_to_class(module_name, class_name):
   return c
 
 
+
 def csvStr2List( csvStr ):
-  # Return a list from the comma separated values
-  # If input string starts with @, then it is assumed that the leading string
-  # an actual path and the content from the file is parsed.
+  """
+    Return a list from the comma separated values
+    If input string starts with @, then it is assumed that the leading string
+    an actual path and the content from the file is parsed.
+  """
   # Treat comma separated lists:
   if type(csvStr) is str:
     # Treat files which start with @ as a comma separated list of files
@@ -92,6 +91,15 @@ def csvStr2List( csvStr ):
     csvStr = [csvStr]
   return csvStr
 
+def is_tool(name):
+  import subprocess
+  try:
+    devnull = open(os.devnull)
+    subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
+  except OSError as e:
+    if e.errno == os.errno.ENOENT:
+      return False
+  return True
 
 def get_attributes(o, **kw):
   """
@@ -99,11 +107,11 @@ def get_attributes(o, **kw):
   """
   onlyVars = kw.pop('onlyVars', False)
   getProtected = kw.pop('getProtected', True)
+  from Gaugi.Configure import checkForUnusedVars
   checkForUnusedVars(kw)
   return [(a[0] if onlyVars else a) for a in inspect.getmembers(o, lambda a:not(inspect.isroutine(a))) \
              if not(a[0].startswith('__') and a[0].endswith('__')) \
                 and (getProtected or not( a[0].startswith('_') or a[0].startswith('__') ) ) ]
-
 
 def printArgs(args, fcn = None):
   try:
@@ -123,378 +131,12 @@ def printArgs(args, fcn = None):
   except ImportError:
     logger.info('Retrieved the following configuration: \n %r', vars(args))
 
-
-
-# helper function to display a progress bar
-#def progressbar(it, prefix="", size=60):
-#    count = len(it)
-#    def _show(_i):
-#        x = int(size*_i/count)
-#        sys.stdout.write("%s[%s%s] %i/%i\r" % (prefix, "█"*x, "."*(size-x), _i, count))
-#        sys.stdout.flush()
-#    _show(0)
-#    for i, item in enumerate(it):
-#        yield item
-#        _show(i+1)
-#    sys.stdout.write("\n")
-#    sys.stdout.flush()
-
-
-
-
-def list_to_stdvector(vecType,l):
-  from ROOT.std import vector
-  vec = vector(vecType)()
-  for v in l:
-    vec.push_back(v)
-  return vec
-
-def stdvector_to_list(vec, size=None):
-  if size:
-    l=size*[0]
-  else:
-    l = vec.size()*[0]
-  for i in range(vec.size()):
-    l[i] = vec[i]
-  return l
-
-
-def floatFromStr(str_):
-  "Return float from string, checking if float is percentage"
-  if '%' in str_:
-    return float(str_.strip('%'))*100.
-  return float(str_)
-
-
-
-def appendToOutput( o, cond, what):
-  """
-  When multiple outputs are configurable, use this method to append to output in case some option is True.
-  """
-  if cond:
-    if type(o) is tuple: o = o + (what,)
-    else: o = o, what
-  return o
-
-def traverse(o, tree_types=(list, tuple),
-    max_depth_dist=0, max_depth=np.iinfo(np.uint64).max, 
-    level=0, parent_idx=0, parent=None,
-    simple_ret=False, length_ret=False):
-  """
-  Loop over each holden element. 
-  Can also be used to change the holden values, e.g.:
-  a = [[[1,2,3],[2,3],[3,4,5,6]],[[[4,7],[]],[6]],7]
-  for obj, idx, parent in traverse(a): parent[idx] = 3
-  [[[3, 3, 3], [3, 3], [3, 3, 3, 3]], [[[3, 3], []], [3]], 3]
-  Examples printing using max_depth_dist:
-  In [0]: for obj in traverse(a,(list, tuple),0,simple_ret=False): print obj
-  (1, 0, [1, 2, 3], 0, 3)
-  (2, 1, [1, 2, 3], 0, 3)
-  (3, 2, [1, 2, 3], 0, 3)
-  (2, 0, [2, 3], 0, 3)
-  (3, 1, [2, 3], 0, 3)
-  (3, 0, [3, 4, 5, 6], 0, 3)
-  (4, 1, [3, 4, 5, 6], 0, 3)
-  (5, 2, [3, 4, 5, 6], 0, 3)
-  (6, 3, [3, 4, 5, 6], 0, 3)
-  (4, 0, [4, 7], 0, 4)
-  (7, 1, [4, 7], 0, 4)
-  (6, 0, [6], 0, 3)
-  (7, 2, [[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 0, 1) 
-  In [1]: for obj in traverse(a,(list, tuple),1): print obj
-  ([1, 2, 3], 0, [[1, 2, 3], [2, 3], [3, 4, 5, 6]], 1, 3)
-  ([2, 3], 0, [[1, 2, 3], [2, 3], [3, 4, 5, 6]], 1, 3)
-  ([3, 4, 5, 6], 0, [[1, 2, 3], [2, 3], [3, 4, 5, 6]], 1, 3)
-  ([4, 7], 0, [[4, 7], []], 1, 4)
-  ([6], 0, [[[4, 7], []], [6]], 1, 3)
-  ([[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 2, None, 1, 1)
-  In [2]: for obj in traverse(a,(list, tuple),2,simple_ret=False): print obj
-  ([[1, 2, 3], [2, 3], [3, 4, 5, 6]], 0, [[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 2, 2)
-  ([[4, 7], []], 0, [[[4, 7], []], [6]], 2, 3)
-  ([[[4, 7], []], [6]], 1, [[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 2, 2)
-  In [3]: for obj in traverse(a,(list, tuple),3): print obj
-  ([[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 0, None, 3, 1)
-  In [4]: for obj in traverse(a,(list, tuple),4): print obj
-  ([[[1, 2, 3], [2, 3], [3, 4, 5, 6]], [[[4, 7], []], [6]], 7], 1, None, 4, 1)
-  In [5]: for obj in traverse(a,(list, tuple),5): print obj
-  <NO OUTPUT>
-  """
-  if isinstance(o, tree_types):
-    level += 1
-    # FIXME Still need to test max_depth
-    if level > max_depth:
-      if simple_ret:
-        yield o
-      elif length_ret:
-        yield level
-      else:
-        yield o, parent_idx, parent, 0, level
-      return
-    skipped = False
-    isDict = isinstance(o, dict)
-    if isDict:
-      loopingObj = o.iteritems()
-    else:
-      loopingObj = enumerate(o)
-    for idx, value in loopingObj:
-      try:
-        for subvalue, subidx, subparent, subdepth_dist, sublevel in traverse(value 
-                                                                            , tree_types     = tree_types
-                                                                            , max_depth_dist = max_depth_dist
-                                                                            , max_depth      = max_depth
-                                                                            , level          = level
-                                                                            , parent_idx     = idx
-                                                                            , parent         = o ):
-          if subdepth_dist == max_depth_dist:
-            if skipped:
-              subdepth_dist += 1
-              break
-            else:
-              if simple_ret:
-                yield subvalue
-              elif length_ret:
-                yield sublevel
-              else:
-                yield subvalue, subidx, subparent, subdepth_dist, sublevel 
-          else:
-            subdepth_dist += 1
-            break
-        else: 
-          continue
-      except SetDepth, e:
-        if simple_ret:
-          yield o
-        elif length_ret:
-          yield level
-        else:
-          yield o, parent_idx, parent, e.depth, level
-        break
-      if subdepth_dist == max_depth_dist:
-        if skipped:
-          subdepth_dist += 1
-          break
-        else:
-          if simple_ret:
-            yield o
-          elif length_ret:
-            yield level
-          else:
-            yield o, parent_idx, parent, subdepth_dist, level
-          break
-      else:
-        if level > (max_depth_dist - subdepth_dist):
-          raise SetDepth(subdepth_dist+1)
-  else:
-    if simple_ret:
-      yield o
-    elif length_ret:
-      yield level
-    else:
-      yield o, parent_idx, parent, 0, level
-
-
-
-
-
-def expandFolders( pathList, filters = None, logger = None, level = None):
-  """
-    Expand all folders to the contained files using the filters on pathList
-    Input arguments:
-    -> pathList: a list containing paths to files and folders;
-    filters;
-    -> filters: return a list for each filter with the files contained on the
-    list matching the filter glob.
-    -> logger: whether to print progress using logger;
-    -> level: logging level to print messages with logger;
-    WARNING: This function is extremely slow and will severely decrease
-    performance if used to expand base paths with several folders in it.
-  """
-  if not isinstance( pathList, (list,tuple,) ):
-    pathList = [pathList]
-  from glob import glob
-  if filters is None:
-    filters = ['*']
-  if not( type( filters ) in (list,tuple,) ):
-    filters = [ filters ]
-  retList = [[] for idx in range(len(filters))]
-  #from RingerCore import progressbar, traverse
-  pathList = list(traverse([glob(path) if '*' in path else path for path in traverse(pathList,simple_ret=True)],simple_ret=True))
-  for path in progressbar( pathList, len(pathList), 'Expanding folders: ', 60, 50,
-                           True if logger is not None else False, logger = logger,
-                           level = level):
-    path = expandPath( path )
-    if not os.path.exists( path ):
-      raise ValueError("Cannot reach path '%s'" % path )
-    if os.path.isdir(path):
-      for idx, filt in enumerate(filters):
-        cList = filter(lambda x: not(os.path.isdir(x)), [ f for f in glob( os.path.join(path,filt) ) ])
-        if cList:
-          retList[idx].extend(cList)
-      folders = [ os.path.join(path,f) for f in os.listdir( path ) if os.path.isdir( os.path.join(path,f) ) ]
-      if folders:
-        recList = expandFolders( folders, filters )
-        if len(filters) is 1:
-          recList = [recList]
-        for l in recList:
-          retList[idx].extend(l)
-    else:
-      for idx, filt in enumerate(filters):
-        if path in glob( os.path.join( os.path.dirname( path ) , filt ) ):
-          retList[idx].append( path )
-  if len(filters) is 1:
-    retList = retList[0]
-  return retList
-
-
-
-class BadFilePath(ValueError): pass
-
-
-def expandPath(path):
-  " Returns absolutePath path expanding variables and user symbols "
-  if not isinstance( path, basestring):
-    raise BadFilePath(path)
-  return os.path.abspath( os.path.expanduser( os.path.expandvars( path ) ) )
-
-
-class Holder( object ):
-  """
-  A simple object holder
-  """
-  def __init__(self, obj = None, replaceable = True):
-    self._obj = obj
-    self._replaceable = replaceable
-  def __call__(self):
-    return self._obj
-  def isValid(self):
-    return self._obj not in (None, NotSet)
-  def set(self, value):
-    if self._replaceable or not self.isValid():
-      self._obj = value
-    else:
-      raise RuntimeError("Cannot replace held object.")
-
-
-def checkExtension( filename, ext, ignoreNumbersAfterExtension = True):
-  """
-    Check if file matches extension(s) ext. If checking for multiple
-    extensions, use | to separate the extensions.
-  """
-  return bool(__extRE(ext, ignoreNumbersAfterExtension).match( filename ))
-
-
-def __extRE(ext, ignoreNumbersAfterExtension = True):
-  """
-  Returns a regular expression compiled object that will search for
-  extension ext
-  """
-  import re
-  if not isinstance( ext, (list,tuple,)): ext = ext.split('|')
-  ext = [e[1:] if e[0] == '.' else e for e in ext]
-  # remove all first dots
-  return re.compile(r'(.*)\.(' + r'|'.join(ext) + r')' + \
-                    (r'(\.[0-9]*|)' if ignoreNumbersAfterExtension else '()') + r'$')
-
-
-def ensureExtension( filename, extL, ignoreNumbersAfterExtension = True ):
-  """
-  Ensure that filename extension is extL, else adds its extension.
-  Extension extL may start with '.' or not. In case it does not, a dot will be
-  added.
-  A '|' may be specified to treat multiple extensions. In case either one of
-  the extensions specified is found, nothing will be changed in the output,
-  else the first extension will be added to the file.
-  """
-  if isinstance(extL, basestring) and '|' in extL:
-    extL = extL.split('|')
-  if not isinstance(extL, (list,tuple)):
-    extL = [extL]
-  extL = ['.' + e if e[0] != '.' else e for e in extL]
-
-  # FIXME: This can be returned earlier by using filter
-  if any([checkExtension(filename, ext, ignoreNumbersAfterExtension) for ext in extL]):
-    return filename
-
-  # FIXME We should check every extension and see how many composed matches we had before doing this
-  ext = extL[0]
-  composed = ext.split('.')
-  if not composed[0]: composed = composed[1:]
-  lComposed = len(composed)
-  if lComposed > 1:
-    for idx in range(lComposed):
-      if filename.endswith( '.'.join(composed[0:idx+1]) ):
-        filename += '.' + '.'.join(composed[idx+1:])
-        break
-    else:
-      filename += ext
-  else:
-    filename += ext
-  return filename
-
-def changeExtension( filename, newExtension, knownFileExtensions = ['tgz', 'tar.gz', 'tar.xz','tar',
-                                                                    'pic.gz', 'pic.xz', 'pic',
-                                                                    'npz', 'npy', 'root'],
-                      retryExtensions = ['gz', 'xz'],
-                      moreFileExtensions = [],
-                      moreRetryExtensions = [],
-                      ignoreNumbersAfterExtension = True,
-                    ):
-  """
-  Append string to end of file name but keeping file extension in the end.
-  Inputs:
-    -> filename: the filename path;
-    -> newExtension: the extension to be used by the file;
-    -> knownFileExtensions: the known file extensions, use to override all file extensions;
-    -> retryExtensions: some extensions are inside other extensions, e.g.
-    tar.gz and .gz. This makes regexp operator | to match the smaller
-    extension, so the easiest solution is to retry the smaller extensions after
-    checking the larger ones.
-    -> moreFileExtensions: add more file extensions to consider without overriding all file extensions;
-    -> moreRetryExtensions: add more extensions to consider while retrying without overriding the retryExtensions;
-    -> ignoreNumbersAfterExtension: whether to ignore numbers after the file extensions or not.
-  Output:
-    -> the filename with the string appended.
-  """
-  knownFileExtensions.extend( moreFileExtensions )
-  def repStr( newExt ):
-    return r'\g<1>' + ( newExt if newExt.startswith('.') else ( '.' + newExt ) )
-  str_ = __extRE( knownFileExtensions )
-  m = str_.match( filename )
-  if m:
-    return str_.sub( repStr(newExtension), filename )
-  str_ = __extRE( retryExtensions )
-  m = str_.match( filename )
-  if m:
-    return str_.sub( repStr(newExtension), filename )
-  else:
-    return filename + newExtension
-
-
-def mkdir_p(path):
-  import errno
-  path = os.path.expandvars( path )
-  try:
-    if not os.path.exists( path ):
-      os.makedirs(path)
-  except OSError as exc: # Python >2.5
-    if exc.errno == errno.EEXIST and os.path.isdir(path):
-      pass
-    else: raise IOError
-
-
-
-
-
-
-
-
-
-
 def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None, level = None,
-                no_bl = int(os.environ.get('RCM_GRID_ENV',0)) or sys.stdout.isatty(), 
+                no_bl = RCM_GRID_ENV or sys.stdout.isatty(), 
                 measureTime = True):
   """
     Display progressbar.
+
     Input arguments:
     -> it: the iterations collection;
     -> count: total number of iterations on collection;
@@ -507,9 +149,9 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
     -> no_bl: whether to show messages without breaking lines;
     -> measureTime: display time measurement when completing progressbar task.
   """
-  from Gaugi.messenger.Logger import LoggingLevel
+  from Gaugi.messenger import LoggingLevel
   from logging import StreamHandler
-  from Gaugi.messenger.Logger import nlStatus, resetNlStatus
+  from Gaugi.messenger import nlStatus, resetNlStatus
   import sys
   if level is None: level = LoggingLevel.INFO
   def _show(_i):
@@ -610,7 +252,6 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
     raise e
   # end of (final treatments)
 
-
 def measureCallTime(f, *args, **kw):
   from logging import StreamHandler
   from Gaugi.messenger.Logger import nlStatus, resetNlStatus
@@ -634,7 +275,7 @@ def measureCallTime(f, *args, **kw):
   level = kw.pop('__level', None )
   from time import time
   if level is None:
-    from Gaugi.messenger.Logger import LoggingLevel
+    from Gaugi.messenger import LoggingLevel
     level = LoggingLevel.DEBUG
   if not msg:
     msg = 'Executing ' + f.__name__ + '(' + ','.join(args) + ','.join([(str(key) + '=' + str(val)) for key, val in kw.iteritems()]) + ')'
@@ -673,7 +314,7 @@ def measureLoopTime(it, prefix = 'Iteration', prefix_end = '',
                     logger = None, level = None, showLoopBenchmarks = True):
   from time import time
   if level is None:
-    from Gaugi.messenger.Logger import LoggingLevel
+    from Gaugi.messenger import LoggingLevel
     level = LoggingLevel.DEBUG
   start = time()
   for i, item in enumerate(it):
@@ -693,4 +334,299 @@ def measureLoopTime(it, prefix = 'Iteration', prefix_end = '',
     sys.stdout.flush()
 
 
+def select( fl, filters, popListInCaseOneItem = True ):
+  """
+  Return a selection from fl maching f
 
+  WARNING: This selection method retrieves the same string contained in fl
+  if it matches two different filters.
+  """
+  try: 
+    iter(filters); 
+    if isinstance(filters,basestring): raise Exception
+  except: filters = [filters]
+  ret = []
+  from Gaugi import traverse
+  for filt in filters:
+    taken = filter(lambda obj: type(obj) in (str,unicode) and filt in obj, traverse(fl, simple_ret = True))
+    ret.append(taken)
+  if popListInCaseOneItem and len(ret) == 1: ret = ret[0]
+  return ret
+
+def reshape( input ):
+  #sourceEnvFile()
+  import numpy as np
+  return np.array(input.tolist())
+
+def reshape_to_array( input ):
+  import numpy as np
+  return np.reshape(input, (1,np.product(input.shape)))[0]
+
+
+def trunc_at(s, d, n=1):
+  "Returns s truncated at the n'th (1st by default) occurrence of the delimiter, d."
+  return d.join(s.split(d)[:n])
+
+def start_after(s, d, n=1):
+  "Returns s after at the n'th (1st by default) occurrence of the delimiter, d."
+  return d.join(s.split(d)[n:])
+
+#def stdvector(vecType, *argl):
+#  from ROOT.std import vector
+#  v = vector(vecType)
+#  return v(*argl)
+
+def list_to_stdvector(vecType,l):
+  from ROOT.std import vector
+  vec = vector(vecType)()
+  for v in l:
+    vec.push_back(v)
+  return vec
+
+def stdvector_to_list(vec, size=None):
+  if size:
+    l=size*[0]
+  else:
+    l = vec.size()*[0]
+  for i in range(vec.size()):
+    l[i] = vec[i]
+  return l
+
+
+def floatFromStr(str_):
+  "Return float from string, checking if float is percentage"
+  if '%' in str_:
+    return float(str_.strip('%'))*100.
+  return float(str_)
+
+class Include:
+  def __call__(self, filename, globalz=None, localz=None, clean=False):
+    "Simple routine to execute python script, possibly keeping global and local variables."
+    searchPath = re.split( ',|' + os.pathsep, os.environ['PYTHONPATH'] )
+    if '' in searchPath:
+      searchPath[ searchPath.index( '' ) ] = str(os.curdir)
+    from Gaugi.FileIO import findFile
+    trueName = findFile(filename, searchPath, os.R_OK )
+    gworkspace = {}
+    lworkspace = {}
+    if globalz: gworkspace.update(globalz)
+    if localz: lworkspace.update(localz)
+    if not clean:
+      gworkspace.update(__main__.__dict__)
+      lworkspace.update(__main__.__dict__)
+    if trueName: 
+      try:
+        execfile(trueName, gworkspace, lworkspace)
+      except NameError, e:
+        if e == "name 'execfile' is not defined":
+          Include.xfile(trueName, globalz, localz)
+        else:
+          raise e
+    else:
+      raise ImportError("Cannot include file: %s" % filename)
+
+  @classmethod
+  def xfile(cls, afile, globalz=None, localz=None):
+    "Alternative to execfile for python3.0"
+    with open(afile, "r") as fh:
+      exec(fh.read(), globalz, localz)
+include = Include()
+
+def geomean(nums):
+  return (reduce(lambda x, y: x*y, nums))**(1.0/len(nums))
+
+def mean(nums):
+  return (sum(nums)/len(nums))
+
+def calcSP( pd, pj ):
+  """
+    ret  = calcSP(x,y) - Calculates the normalized [0,1] SP value.
+    effic is a vector containing the detection efficiency [0,1] of each
+    discriminating pattern.  
+  """
+  from numpy import sqrt
+  return sqrt(geomean([pd,pj]) * mean([pd,pj]))
+
+class Roc(object):
+  """
+    Create ROC information holder
+  """
+  #from RingerCore.RawDictStreamable import RawDictStreamable
+  #__metaclass__ = RawDictStreamable
+
+  def __init__( self, label, input_, target = NotSet, numPts = 1000, npConst = NotSet, reference = None ):
+    """
+			def ROC( output, target, label, numPts = 1000, npConst = npConstants() ):
+
+      Input Parameters are:
+         output -> The output space generated by the classifier.
+         target -> The targets which should be returned by the classifier.
+         label ->  A label to identify the ROC.
+         numPts -> (1000) The number of points to generate the ROC.
+         npConst -> (npConstants()) The number of points to generate the ROC.
+    """
+    from Gaugi.npConstants import npConstants
+    if npConst is NotSet: npConst = npConstants()
+    self.label = label
+    if target is NotSet:
+      self.spVec    = input_[0]
+      self.detVec   = input_[1]
+      self.faVec    = input_[2]
+      self.cutVec   = input_[3]
+    else:
+      # We have to determine what is signal and noise from the datasets using
+      # the targets:
+      outSignal = input_[np.where(target == 1.)[1]]
+      outNoise = input_[np.where(target == -1.)[1]]
+      outSignal = np.sort(outSignal, kind='heapsort')
+      outNoise  = np.sort(outNoise , kind='heapsort')
+      self.cutVec = np.arange( -1., 1., 2. / ( numPts ) )
+      self.detVec = npConst.fp_zeros( numPts )
+      self.faVec  = npConst.fp_zeros( numPts )
+      self.spVec  = npConst.fp_zeros( numPts )
+      lenSig   = float( len(outSignal) )
+      lenNoise = float( len(outNoise)  )
+      for i in range( numPts ):
+        self.detVec[i] = ( lenSig   - np.searchsorted( outSignal, self.cutVec[i] ) ) / lenSig
+        self.faVec[i]  = ( lenNoise - np.searchsorted( outNoise,  self.cutVec[i] ) ) / lenNoise
+        self.spVec[i]   = calcSP( self.detVec[i], 1. - self.faVec[i] )
+    self.maxIdx = np.argmax(self.spVec)
+    self.sp  = self.spVec  [ self.maxIdx ]
+    self.det = self.detVec [ self.maxIdx ]
+    self.fa  = self.faVec  [ self.maxIdx ]
+    self.cut = self.cutVec [ self.maxIdx ]
+
+#Helper function
+def Roc_to_histogram(g, nsignal, nnoise):
+  import numpy as np
+  npoints = g.GetN()
+  nsignalLastBin = 0
+  nnoiseLastBin  = 0
+  nsignalBin = np.array([0]*npoints)
+  nnoiseBin = np.array([0]*npoints)
+  totalSignal = totalNoise =0
+  pd = g.GetY()
+  fa = g.GetX()
+  for np in range( npoints ):
+    nsignalBin[np] = nsignal - int(pd[np]*nsignal) - nsignalLastBin
+    nnoiseBin[np] = nnoise - int(fa[np]*nnoise) - nnoiseLastBin
+    nsignalLastBin += nsignalBin[np]
+    nnoiseLastBin += nnoiseBin[np]
+    totalSignal += nsignalBin[np]
+    totalNoise += nnoiseBin[np]
+  #Loop over Receive Operating Curve
+
+  signalTarget = 1
+  noiseTarget = -1
+  #Prepare the estimation output
+  resolution = (signalTarget - noiseTarget)/float(npoints)
+  binValue = noiseTarget
+  signalOutput = []
+  noiseOutput = []
+
+  for np in range(npoints):
+    signalOutput += nsignalBin[np]*[binValue]
+    noiseOutput += nnoiseBin[np]*[binValue]
+    binValue += resolution
+
+  return signalOutput, noiseOutput
+
+def keyboard():
+  """ 
+    Function that mimics the matlab keyboard command.
+  """
+  import pdb; pdb.set_trace()
+
+
+def createRootParameter( type_name, name, value):
+  from ROOT import TParameter
+  return TParameter(type_name)(name,value)
+
+def timed(f):
+  def func(*args):
+    import time
+    start = time.time()
+    ret = f(*args)
+    took = time.time() - start
+    print("%s took %f" % (f.__name__,took))
+    return ret
+  return func
+
+def getFilters( filtFinder, objs, idxs = None, printf = None):
+  """
+    Get filters using filter finder
+  """
+  filt = filtFinder
+  if hasattr(filtFinder,'__call__'):
+    if type(filtFinder) is type:
+      filtFinder = filtFinder()
+    filt = filtFinder( objs )
+    #Retrieve only the bin IDx selected by arg
+    if idxs is not None:
+      try:
+        filt = [filt[idx] for idx in idxs]
+      except IndexError:
+        raise IndexError('This bin index does not exist.')
+      if printf is not None:
+        printf('Analyzing only the bin index %r', idxs)
+    printf('Found following filters (total:%d): %r', len(filt), filt)
+  return filt
+
+def apply_sort( inputCollection, sortedIdx ):
+  """
+    Returns inputCollection sorted accordingly to sortedIdx
+  """
+  return [inputCollection[idx] for idx in sortedIdx]
+
+def scale10( num ):
+  """
+    Returns the scale 10 power index of num
+  """
+  import math
+  return math.ceil(math.log10(abs(num))) if num else 0
+
+def appendToOutput( o, cond, what):
+  """
+  When multiple outputs are configurable, use this method to append to output in case some option is True.
+  """
+  if cond:
+    if type(o) is tuple: o = o + (what,)
+    else: o = o, what
+  return o
+
+def secureExtractNpItem( npArray ):
+  try:
+    return npArray.item()
+  except AttributeError:
+    return npArray
+
+
+def emptyArgumentsPrintHelp(parser):
+  """
+  If user do not enter any argument, print help
+  """
+  import sys
+  if len(sys.argv)==1:
+    from Gaugi.messenger.Logger import _getFormatter
+    sys.stdout.write(_getFormatter().color_seq % { 'color' : _getFormatter().colors['INFO']})
+    #mainLogger = Logger.getModuleLogger( __name__)
+    #mainLogger.write = mainLogger.info
+    #parser.print_help(file = mainLogger)
+    parser.print_help()
+    sys.stdout.write(_getFormatter().reset_seq)
+    parser.exit(1)
+
+def os_environ_get( env, default_env ):
+  import os
+  ENV=os.environ.get(env,default_env)
+  if ENV=='':
+    return default_env
+  return ENV
+
+
+def grouper(iterable, n, fillvalue=None):
+  "Collect data into fixed-length chunks or blocks"
+  # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+  args = [iter(iterable)] * n
+  from itertools import izip_longest
+  return izip_longest(fillvalue=fillvalue, *args)

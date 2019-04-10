@@ -2,7 +2,8 @@
 __all__ = [ 'NotSetType', 
             'NotSet', 
             'EnumStringification', 
-            'BooleanStr'
+            'BooleanStr',
+            'StdPair',
           ]
 
 
@@ -30,7 +31,7 @@ class EnumStringification( object ):
   @classmethod
   def tostring(cls, val):
     "Transforms val into string."
-    from Gaugi.utilities import get_attributes
+    from Gaugi.utilities  import get_attributes
     for k, v in get_attributes(cls, getProtected = False):
       if v==val:
         return k
@@ -83,16 +84,19 @@ class EnumStringification( object ):
   @classmethod
   def optionList(cls):
     from operator import itemgetter
+    from Gaugi.utilities import get_attributes
     return [v for v in sorted(get_attributes( cls, getProtected = False), key=itemgetter(1))]
 
   @classmethod
   def stringList(cls):
     from operator import itemgetter
+    from Gaugi.utilities import get_attributes
     return [v[0] for v in sorted(get_attributes( cls, getProtected = False), key=itemgetter(1))]
 
   @classmethod
   def intList(cls):
     from operator import itemgetter
+    from Gaugi.utilities import get_attributes
     return [v[1] for v in sorted(get_attributes( cls, getProtected = False), key=itemgetter(1))]
 
  
@@ -160,5 +164,15 @@ class BooleanStr( EnumStringification ):
         return d[var]
     else:
       return default
+
+class StdPair( object ):
+  """
+  A simple object pair holder
+  """
+  def __init__(self, a, b):
+    self.first  = a
+    self.second = b
+  def __call__(self):
+    return (self.first, self.second)
 
 

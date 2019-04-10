@@ -10,8 +10,8 @@ class Merge( Logger ):
   def __init__(self, fList):
     
     Logger.__init__(self)
-    from Gaugi.utilities import csvStr2List
-    from Gaugi.utilities import expandFolders
+    from Gaugi import csvStr2List
+    from Gaugi import expandFolders
     self.fList = csvStr2List ( fList )
     self.fList = expandFolders( fList )
     self.process_pipe = []
@@ -85,8 +85,8 @@ class Parallel( Logger ):
   def __init__(self, fList):
     
     Logger.__init__(self)
-    from Gaugi.utilities import csvStr2List
-    from Gaugi.utilities import expandFolders
+    from Gaugi import csvStr2List
+    from Gaugi import expandFolders
     self.fList = csvStr2List ( fList )
     self.fList = expandFolders( fList )
     self.process_pipe = []

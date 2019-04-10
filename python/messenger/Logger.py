@@ -1,7 +1,7 @@
 __all__ = ['LoggingLevel', 'Logger', 'nlStatus', 'resetNlStatus']
 
 from Gaugi.types  import EnumStringification
-from Gaugi.utilities import retrieve_kw
+from Gaugi.Configure import retrieve_kw
 import logging
 
 
@@ -284,7 +284,7 @@ class Logger( object ):
       Retrieve from args the logger, or create it using default configuration.
     """
     d.update( kw )
-    from Gaugi.utilities import retrieve_kw
+    from Gaugi.Configure import retrieve_kw
     from Gaugi.types import NotSet
     if 'level' in d:
       if d['level'] not in (None, NotSet):
@@ -335,8 +335,6 @@ class Logger( object ):
     except AttributeError:
       self._logger = Logger.getModuleLogger(self.__module__, self.level )
     self._logger.setLevel( self.level )
-
-
 
 
 
