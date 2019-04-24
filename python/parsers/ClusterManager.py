@@ -10,7 +10,7 @@ from Gaugi.messenger import Logger, LoggingLevel
 from Gaugi.parsers.ParsingUtils import ( _ActionsContainer, _MutuallyExclusiveGroup
                                             , _ArgumentGroup, ArgumentParser, argparse
                                             , ArgumentError )
-from Gaugi.types import EnumStringification, NotSet
+from Gaugi.gtypes import EnumStringification, NotSet
 from Gaugi.Configure import ( EnumStringificationOptionConfigure, Holder
                                  , cmd_exists )
 from Gaugi.utilities import get_attributes

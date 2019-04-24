@@ -17,7 +17,7 @@ import gzip
 import inspect
 import numpy as np
 
-from Gaugi.types import NotSet
+from Gaugi.gtypes import NotSet
 from Gaugi.Configure import RCM_NO_COLOR, RCM_GRID_ENV
 
 loadedEnvFile = False

@@ -1,6 +1,6 @@
 __all__ = ['LoggingLevel', 'Logger', 'nlStatus', 'resetNlStatus']
 
-from Gaugi.types  import EnumStringification
+from Gaugi.gtypes  import EnumStringification
 from Gaugi.Configure import retrieve_kw
 import logging
 
@@ -238,7 +238,7 @@ class Logger( object ):
       return LoggingLevel.INFO
 
   def setLevel(self, value):
-    from Gaugi.types import NotSet
+    from Gaugi.gtypes import NotSet
     if value not in (None, NotSet):
       self._level = LoggingLevel.retrieve( value )
       if self._logger.level != self._level:
@@ -285,7 +285,7 @@ class Logger( object ):
     """
     d.update( kw )
     from Gaugi.Configure import retrieve_kw
-    from Gaugi.types import NotSet
+    from Gaugi.gtypes import NotSet
     if 'level' in d:
       if d['level'] not in (None, NotSet):
         self._level = LoggingLevel.retrieve( retrieve_kw(d, 'level') )

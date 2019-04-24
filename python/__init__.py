@@ -1,9 +1,9 @@
 
 __all__ = []
 
-from . import types
-__all__.extend(types.__all__)
-from .types import *
+from . import gtypes
+__all__.extend(gtypes.__all__)
+from .gtypes import *
 
 from . import Configure
 __all__.extend(Configure.__all__)

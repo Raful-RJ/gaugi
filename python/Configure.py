@@ -7,7 +7,7 @@ __all__ = [ 'Holder'
           , 'Development'
           ]
 
-from Gaugi.types import *
+from Gaugi.gtypes import *
 import os, multiprocessing
 RCM_GRID_ENV = int(os.environ.get('RCM_GRID_ENV',0))
 RCM_NO_COLOR = int(os.environ.get('RCM_NO_COLOR',1))

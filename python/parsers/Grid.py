@@ -10,7 +10,7 @@ from Gaugi.parsers.Logger import LoggerNamespace
 from Gaugi.parsers.ClusterManager import ( JobSubmitArgumentParser, JobSubmitNamespace
                                          , clusterManagerParser ) 
 from Gaugi.LimitedTypeList import LimitedTypeList
-from Gaugi.types import BooleanStr, NotSet
+from Gaugi.gtypes import BooleanStr, NotSet
 from Gaugi.Configure import CastToTypeOptionConfigure
 
 def extract_scope(did):
