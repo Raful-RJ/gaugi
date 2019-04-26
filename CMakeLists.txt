@@ -45,6 +45,8 @@ else()
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/Gaugi/MsgStream.h ${CMAKE_CURRENT_SOURCE_DIR}/Gaugi/defines.h 
           DESTINATION Gaugi)
 
+
+
   gaugi_install_python_modules( ${CMAKE_CURRENT_SOURCE_DIR}/python Gaugi)
 
 endif()
