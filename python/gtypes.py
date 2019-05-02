@@ -40,6 +40,7 @@ class EnumStringification( object ):
   @classmethod
   def fromstring(cls, str_):
     "Transforms string into enumeration."
+    from Gaugi.utilities  import get_attributes
     if not cls._ignoreCase:
       return getattr(cls, str_, None)
     else:

@@ -293,8 +293,9 @@ class ArgumentParser( _ActionsContainer, argparse.ArgumentParser ):
     raise ArgumentError( None, message )
 
   def _print_message(self, message, file=None):
-    from Gaugi.messenger import Logger
+    from Gaugi.messenger import Logger, LoggingLevel
     logger = Logger.getModuleLogger( self.__class__.__name__ )
+    logger.setLevel(LoggingLevel.INFO)
     if message:
       logger.info('\n' + message)
 
