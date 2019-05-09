@@ -1,9 +1,12 @@
 
 
-__all__ = ['Merge', 'Parallel']
+__all__ = ['Merge', 'Parallel', 'SafeProcess']
 
 from Gaugi.messenger import LoggingLevel, Logger
 from Gaugi.messenger.macros import *
+from multiprocessing import Process, Event
+from multiprocessing import Queue
+
 
 class Merge( Logger ):
 
@@ -138,3 +141,38 @@ class Parallel( Logger ):
 
 
 
+class SafeProcess( Logger, Process ):
+
+  def __init__(self, cls, id, queue_size = 1):
+    Logger.__init__(self)
+    Process.__init__(self)
+    self._queue = Queue(queue_size)
+    self._cls = cls
+    self._id = id
+    self._is_alive_event = Event()
+  
+  def __call__(self, *args, **kwargs):
+    self._args = args
+    self._kwargs = kwargs
+    self._is_alive_event.set()
+    self.start()
+
+  def run(self):
+    try:
+      outputs = self._cls(*self._args, **self._kwargs)
+      self._queue.put(outputs)
+      self._is_alive_event.clear()
+    except:
+      self._is_alive_event.clear()
+
+  def id(self):
+    return self._id
+
+  def get(self, answer=None):
+    if self._queue.qsize() > 0:
+      return self._queue.get()
+    else:
+      return answer
+
+  def is_alive(self):
+    return self._is_alive_event.is_set()

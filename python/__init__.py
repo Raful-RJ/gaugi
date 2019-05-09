@@ -64,6 +64,11 @@ __all__.extend(parsers.__all__)
 from .parsers import *
 
 
+__gaugi__version__ = '1.0'
 
-
-
+def print_gaugi_version():
+  from Gaugi.enumerations import Color
+  print( ("%sGaugi core (%s)%s") % (TexColor.CWHITE,__gaugi__version__,TexColor.CEND) )
+  print( ("%sMaintainer: jodafons@cern.ch%s") % (TexColor.CWHITE, TexColor.CEND) )
+  print( ("%s            wsfreund@cern.ch%s") % (TexColor.CWHITE, TexColor.CEND) )
+#print_gaugi_version()
