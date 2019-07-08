@@ -109,8 +109,8 @@ class BooleanStr( EnumStringification ):
   """
   _ignoreCase = True
 
-  False = False
-  True = True
+  FALSE = False
+  TRUE = True
 
   @classmethod
   def tostring(cls, val):
@@ -136,7 +136,7 @@ class BooleanStr( EnumStringification ):
         return False
       else:
         return True
-    except Exception, e:
+    except Exception as e:
       pass
     return super(BooleanStr,cls).fromstring( str_ )
 
@@ -152,7 +152,7 @@ class BooleanStr( EnumStringification ):
         return False
       else:
         return True
-    except Exception, e:
+    except Exception as e:
       pass
     return super(BooleanStr, cls).retrieve( val )
 

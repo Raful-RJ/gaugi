@@ -2,6 +2,11 @@ __all__ = [ 'argparse','ArgumentParser', 'ArgumentError', 'BooleanRetrieve']
 
 from Gaugi.utilities import get_attributes
 import re, textwrap, argparse
+try:
+  basestring
+except NameError:
+  basestring = str
+
 
 ArgumentError = argparse.ArgumentError
 
@@ -278,11 +283,11 @@ class ArgumentParser( _ActionsContainer, argparse.ArgumentParser ):
     if 'parents' in kw:
       parents = kw['parents']
       for parent in parents:
-        for key, reg in parent._registries.iteritems():
+        for key, reg in parent._registries.items():
           if not key in self._registries:
             self._registries[key] = reg
           else:
-            for key_act, act in reg.iteritems():
+            for key_act, act in reg.items():
               if not key_act in self._registries[key]:
                 self.register(key, key_act, act)
 

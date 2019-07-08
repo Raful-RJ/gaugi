@@ -49,7 +49,7 @@ def checkForUnusedVars(d, fcn = None):
     if fcn:
       fcn(msg)
     else:
-      print 'WARNING:%s' % msg
+      print('WARNING:%s' % msg)
 
 def setDefaultKey( d, key, val):
   "Adds key to dict if not available"

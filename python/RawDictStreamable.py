@@ -212,7 +212,7 @@ def retrieveRawDict( val, logger = mLogger ):
       logger.verbose( "Converting rawDict to an instance of type '%s'." % val['class'] )
       cls = str_to_class( val['__module'], val['class'] )
       val = cls.fromRawObj( val )
-    except KeyError, e:
+    except KeyError as e:
       logger.error("Couldn't convert rawDict to an instance of type '%s'!\n Reason: %s", val['class'], e)
   return val
 

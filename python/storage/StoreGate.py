@@ -164,7 +164,7 @@ class StoreGate( Logger ) :
             yield i
         else:
           yield basepath+kname, d.Get(kname)
-    except AttributeError, e:
+    except AttributeError as e:
       self._logger.debug("Ignore reading object of type %s.",type(d))
 
 

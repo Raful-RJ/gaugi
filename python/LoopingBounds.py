@@ -124,7 +124,7 @@ def traverse(o, tree_types=(list, tuple),
             break
         else: 
           continue
-      except SetDepth, e:
+      except SetDepth as e:
         if simple_ret:
           yield o
         elif length_ret:

@@ -12,7 +12,7 @@ import re, os, __main__
 import sys
 import code
 import types
-import cPickle
+import pickle as cPickle
 import gzip
 import inspect
 import numpy as np
@@ -127,7 +127,7 @@ def printArgs(args, fcn = None):
     if fcn:
       fcn(msg)
     else:
-      print 'INFO:%s' % msg
+      print ('INFO:%s' % msg)
   except ImportError:
     logger.info('Retrieved the following configuration: \n %r', vars(args))
 
@@ -226,7 +226,7 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
         sys.stdout.flush()
   except (BaseException) as e:
     import traceback
-    print traceback.format_exc()
+    print (traceback.format_exc())
     step = 1 # Make sure we always display last printing
     if disp:
       if logger:
@@ -417,7 +417,7 @@ class Include:
     if trueName: 
       try:
         execfile(trueName, gworkspace, lworkspace)
-      except NameError, e:
+      except NameError as e:
         if e == "name 'execfile' is not defined":
           Include.xfile(trueName, globalz, localz)
         else:

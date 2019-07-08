@@ -7,18 +7,35 @@ __all__ = ['save', 'load', 'expandFolders', 'mkdir_p',
            'LockFile']
 
 import numpy as np
-import cPickle
+import pickle as cPickle
 import gzip
 import tarfile
 import tempfile
 import os
 import sys
 import shutil
-import StringIO
 import signal
 from time import sleep, time
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+try:
+  basestring
+except NameError:
+  basestring = str
 
 class BadFilePath(ValueError): pass
+
+# Python 3 fix
+def convert(data):
+  if isinstance(data, bytes):  return data.decode()
+  if isinstance(data, dict):   return dict(map(convert, data.items()))
+  if isinstance(data, tuple):  return tuple(map(convert, data))
+  if isinstance(data, list):   return list(map(convert, data))
+  return data
+
 
 from Gaugi.messenger import Logger
 class LockFile( Logger ):
@@ -91,7 +108,7 @@ def save(o, filename, **kw):
         import scipy.io
         if lock: lockFile = watchLock( filename )
         scipy.io.savemat( filename, o)
-      except ImportError, e:
+      except ImportError as e:
         raise ImportError( "Exporting data in matlab extension is not available. Reason: %s" % e )
     elif protocol == "savez_compressed":
       filename = ensureExtension(filename, 'npz')
@@ -202,9 +219,21 @@ def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = F
       return o
     else:
       f = open(filename,'r')
-    o = cPickle.load(f)
-    f.close()
-    o = transformDataRawData( o, filename, None )
+
+
+    try: # python 3
+      o = cPickle.load(f,encoding='bytes')
+      f.close()
+      o = transformDataRawData( o, filename, None )
+      # This is necessary for python 3
+      o = convert(o)
+    except: # python 2
+      o = cPickle.load(f)
+      f.close()
+      o = transformDataRawData( o, filename, None )
+
+
+
     return [o] if useGenerator else o
   # end of (if filename)
 # end of (load)
