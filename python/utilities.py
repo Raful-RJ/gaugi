@@ -159,7 +159,11 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
     if _i % (step if step else 1): return
     if logger:
       if logger.isEnabledFor(level):
-        fn, lno, func = logger.findCaller() 
+        try:
+          fn, lno, func = logger.findCaller() 
+        except:
+          fn, lno, func, _ = logger.findCaller() 
+
         record = logger.makeRecord(logger.name, level, fn, lno, 
                                    "%s|%s%s| %i/%i\r",
                                    (prefix, "█"*x, "-"*(size-x), _i, count,), 

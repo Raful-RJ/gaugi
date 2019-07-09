@@ -8,6 +8,12 @@ __all__ = ['LoopingBounds', 'MatlabLoopingBounds', 'PythonLoopingBounds',
 import numpy as np
 from Gaugi.messenger import Logger
 
+try:
+    xrange
+except NameError:
+    xrange = range
+
+
 class SetDepth(Exception):
   def __init__(self, value):
     self.depth = value

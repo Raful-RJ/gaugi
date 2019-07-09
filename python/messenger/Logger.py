@@ -138,7 +138,10 @@ class StreamHandler2( logging.StreamHandler ):
       _nl = nl
       fs += '%s'
       if nl: fs += '\n'
-      if not logging._unicode: #if no unicode support...
+      
+      if not hasattr(logging, '_unicode'):
+        stream.write(fs % msg)
+      elif not logging._unicode: #if no unicode support...
         stream.write(fs % msg)
       else:
         try:

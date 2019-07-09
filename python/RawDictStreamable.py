@@ -41,7 +41,7 @@ class RawDictStreamer( Logger ):
   def __call__(self, obj):
     "Return a raw dict object from itself"
     self.preCall(obj)
-    raw = { key : val for key, val in obj.__dict__.iteritems() if key not in self.transientAttrs }
+    raw = { key : val for key, val in obj.__dict__.items() if key not in self.transientAttrs }
     for searchKey in self.toPublicAttrs:
       publicKey = searchKey.lstrip('_')
       searchKey = mangle_attr(obj, searchKey)
@@ -52,7 +52,7 @@ class RawDictStreamer( Logger ):
         raw[publicKey] = raw.pop(searchKey)
       else:
         self._fatal("Cannot transform to public key attribute '%s'", searchKey, KeyError)
-    for key, val in raw.iteritems():
+    for key, val in raw.items():
       try:
         streamable = issubclass( val.__metaclass__, RawDictStreamable)
       except AttributeError:
@@ -286,7 +286,7 @@ class RawDictStreamable( type ):
     # object twice, though this will probably very rarely (if ever) be used.
     self._cnvObj = deepcopy(cls._cnvObj)
     if kw:
-      for key, val in kw.iteritems():
+      for key, val in kw.items():
         setattr( self._cnvObj, key, val)
     self = self.buildFromDict( obj )
     # Delete instance specific converter
@@ -314,14 +314,20 @@ class LoggerRawDictStreamer(RawDictStreamer):
     transientAttrs = set(transientAttrs) | LoggerRawDictStreamer.transientAttrs
     RawDictStreamer.__init__(self, transientAttrs, toPublicAttrs, **kw)
 
-class LoggerStreamable( Logger ):
+
+# Extend support ti python 2 and 3 for metaclass
+# See: https://stackoverflow.com/questions/22409430/portable-meta-class-between-python2-and-python3
+import six
+#class LoggerStreamable( Logger, metaclass=RawDictStreamable ): # Python 3 style
+class LoggerStreamable( six.with_metaclass(RawDictStreamable, Logger) ):
   """
   Logger class with RawDictStreamer capabilities.
   """
-  __metaclass__ = RawDictStreamable
+  #__metaclass__ = RawDictStreamable # python 2 style
   _streamerObj = LoggerRawDictStreamer
   _version = 1
 
   def __init__(self, d = {}, **kw): 
+    #RawDictStreamable.__init__(self, d, **kw)
     Logger.__init__(self, d, **kw)
 

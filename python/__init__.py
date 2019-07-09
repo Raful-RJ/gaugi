@@ -1,6 +1,12 @@
 
 __all__ = []
 
+try:
+    xrange
+except NameError:
+    xrange = range
+
+
 from . import gtypes
 __all__.extend(gtypes.__all__)
 from .gtypes import *
