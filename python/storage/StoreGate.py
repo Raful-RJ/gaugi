@@ -12,13 +12,13 @@ class StoreGate( Logger ) :
     Logger.__init__(self,**kw)
     if not outputFile.endswith('.root'):
       outputFile += '.root'
-    from Gaugi.utilities import retrieve_kw
+    from Gaugi import retrieve_kw
     # Use this property to rebuild the storegate from a root file
     self._restoreStoreGate=retrieve_kw(kw,'restoreStoreGate',False)
     filterDirs=retrieve_kw(kw,'filterDirs', None)
     #Create TFile object to hold everything
     from ROOT import TFile
-    from Gaugi.utilities import expandPath
+    from Gaugi import expandPath
     outputFile = expandPath( outputFile )
     if self._restoreStoreGate:
       import os.path
@@ -91,7 +91,20 @@ class StoreGate( Logger ) :
       self._objects[fullpath] = obj
       #obj.Write()
       self._logger.debug('Saving object type %s into %s',type(obj), fullpath)
-  
+
+
+  def addObject( self, obj ):
+    feature = obj.GetName()
+    fullpath = (self._currentDir + '/' + feature).replace('//','/')
+    if not fullpath.startswith('/'):
+      fullpath='/'+fullpath
+    if not fullpath in self._dirs:
+      self._dirs.append(fullpath)
+      self._objects[fullpath] = obj
+      obj.Write()
+      self._logger.debug('Saving object type %s into %s',type(obj), fullpath)
+
+
   def histogram(self, feature):
     fullpath = (feature).replace('//','/')
     if not fullpath.startswith('/'):
@@ -132,6 +145,8 @@ class StoreGate( Logger ) :
 
   def getDirs(self):
     return self._dirs
+
+
 
   def merge(self, sg):
     if isinstance(sg, StoreGate):
