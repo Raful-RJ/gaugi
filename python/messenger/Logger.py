@@ -22,7 +22,7 @@ class LoggingLevel ( EnumStringification ):
 
   @classmethod
   def toC(cls, val):
-    val = LoggingLevel.retrieve( val ) 
+    val = LoggingLevel.retrieve( val )
     if val == cls.VERBOSE:
       val = 0
     else:
@@ -37,7 +37,7 @@ def verbose(self, message, *args, **kws):
     Attempt to emit verbose message
   """
   if self.isEnabledFor(LoggingLevel.VERBOSE):
-    self._log(LoggingLevel.VERBOSE, message, args, **kws) 
+    self._log(LoggingLevel.VERBOSE, message, args, **kws)
 
 class FatalError(RuntimeError):
   pass
@@ -55,7 +55,7 @@ def _getAnyException(args):
 def warning(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if self.isEnabledFor(LoggingLevel.WARNING):
-    self._log(LoggingLevel.WARNING, message, args, **kws) 
+    self._log(LoggingLevel.WARNING, message, args, **kws)
   if Exc is not None:
     if args:
       raise Exc(message % (args if len(args) > 1 else args[0]))
@@ -65,7 +65,7 @@ def warning(self, message, *args, **kws):
 def error(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if self.isEnabledFor(LoggingLevel.ERROR):
-    self._log(LoggingLevel.ERROR, message, args, **kws) 
+    self._log(LoggingLevel.ERROR, message, args, **kws)
   if Exc is not None:
     if args:
       raise Exc(message % (args if len(args) > 1 else args[0]))
@@ -79,7 +79,7 @@ def fatal(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if Exc is None: Exc = FatalError
   if self.isEnabledFor(LoggingLevel.FATAL):
-    self._log(LoggingLevel.FATAL, message, args, **kws) 
+    self._log(LoggingLevel.FATAL, message, args, **kws)
   if args:
     raise Exc(message % (args if len(args) > 1 else args[0]))
   else:
@@ -138,7 +138,7 @@ class StreamHandler2( logging.StreamHandler ):
       _nl = nl
       fs += '%s'
       if nl: fs += '\n'
-      
+
       if not hasattr(logging, '_unicode'):
         stream.write(fs % msg)
       elif not logging._unicode: #if no unicode support...
@@ -205,8 +205,9 @@ def _getFormatter():
         record.color = self.colors[levelname]
       return logging.Formatter.format(self, record)
   import os, sys
+	uiurl = https://github.com/jodafons/orchestradb.git
   formatter = Formatter(
-                       "Py.%(name)-33.33s %(levelname)7.7s %(message)s", 
+                       "%(asctime)s | Py.%(name)-33.33s %(levelname)7.7s %(message)s",
                        not(int(os.environ.get('RCM_NO_COLOR',1)) or not(sys.stdout.isatty()))
                        )
   return formatter
@@ -309,13 +310,13 @@ class Logger( object ):
     #l = self._logger
     #for f in ( l.verbose, l.debug, l.info
     #         , l.warning, l.error, l.critical
-    #         , l.fatal ): 
+    #         , l.fatal ):
     #  check_add(f)
 
   def __getattr__(self, attr):
     if attr.startswith('_') and  attr.lstrip('_') in ( 'verbose', 'debug', 'info'
                                                      , 'warning', 'error', 'critical'
-                                                     , 'fatal'): 
+                                                     , 'fatal'):
       return getattr( self._logger, attr.lstrip('_') )
     raise AttributeError( 'AttributeError was raised inside an instance of Logger class while attempting to get: %s' % attr )
 
@@ -332,7 +333,7 @@ class Logger( object ):
       Add logger to object if it doesn't have one:
     """
     self.__dict__.update(d)   # update attributes
-    try: 
+    try:
       if self._logger is None: # Also add a logger if it is set to None
         self._logger = Logger.getModuleLogger(self.__class__.__name__, self.level )
     except AttributeError:
