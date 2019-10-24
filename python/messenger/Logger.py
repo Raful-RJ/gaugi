@@ -205,7 +205,6 @@ def _getFormatter():
         record.color = self.colors[levelname]
       return logging.Formatter.format(self, record)
   import os, sys
-	uiurl = https://github.com/jodafons/orchestradb.git
   formatter = Formatter(
                        "%(asctime)s | Py.%(name)-33.33s %(levelname)7.7s %(message)s",
                        not(int(os.environ.get('RCM_NO_COLOR',1)) or not(sys.stdout.isatty()))
