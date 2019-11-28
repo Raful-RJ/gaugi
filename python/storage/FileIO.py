@@ -186,8 +186,9 @@ def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = F
   if not os.path.isfile( filename ):
     raise ValueError("Cannot reach file %s" % filename )
   if checkExtension( filename, 'npy|npz'):
-    o = transformDataRawData( np.load(filename,mmap_mode='r'), filename, None )
-    return [o] if useGenerator else o
+    #o = transformDataRawData( np.load(filename,mmap_mode='r'), filename, None )
+    #return [o] if useGenerator else o
+    return dict(np.load(filename))
   else:
     if decompress == 'auto':
       if checkExtension( filename, 'tar.gz|tgz' ):
