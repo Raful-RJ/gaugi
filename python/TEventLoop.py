@@ -3,7 +3,7 @@ __all__ = ['TEventLoop']
 
 from Gaugi.messenger import Logger, LoggingLevel
 from Gaugi.messenger.macros import *
-from Gaugi import StatusCode
+from Gaugi import StatusCode,StatusTool,StatusWTD
 from Gaugi.gtypes import NotSet
 
 # Import all root classes
@@ -22,6 +22,7 @@ class TEventLoop( Logger ):
     self._treePath   = retrieve_kw( kw, 'treePath'  , NotSet                          )
     self._dataframe  = retrieve_kw( kw, 'dataframe' , NotSet                          )
     self._nov        = retrieve_kw( kw, 'nov'       , -1                              )
+    self._mute_progressbar   = retrieve_kw( kw, 'mute_progressbar', False             )
     self._level = LoggingLevel.retrieve( retrieve_kw(kw, 'level', LoggingLevel.INFO ) )
     self._name       = name
     if self._fList:
@@ -36,6 +37,7 @@ class TEventLoop( Logger ):
     self._t = NotSet # TChain used to hold the ttree files
     self._event = NotSet # TEvent schemma used to read the ttree
     self._entries = NotSet # total number of event inside of the ttree
+    self._context = NotSet # Hold the event context
 
   def name(self):
     return self._name
@@ -90,6 +92,9 @@ class TEventLoop( Logger ):
     self._entries = self._t.GetEntries()
 
 
+    from Gaugi import EventContext
+    self._context = EventContext(self._t)
+
 
     # Create the StoreGate service
     if not self._storegateSvc:
@@ -98,6 +103,26 @@ class TEventLoop( Logger ):
       self._storegateSvc = StoreGate( self._ofile , level = self._level)
     else:
       MSG_INFO( self, 'The StoraGate was created for ohter service. Using the service setted by client.')
+
+
+
+    MSG_INFO( self, 'Initializing all tools...')
+    from Gaugi import ToolSvc as toolSvc
+    self._alg_tools = toolSvc.getTools()
+    for alg in self._alg_tools:
+      if alg.status is StatusTool.DISABLE:
+        continue
+      # Retrieve all services
+      alg.level = self._level
+      alg.setContext( self.getContext() )
+      alg.setStoreGateSvc( self.getStoreGateSvc() )
+      alg.dataframe = self._dataframe
+      if alg.isInitialized():
+        continue
+      if alg.initialize().isFailure():
+        MSG_FATAL( self, "Impossible to initialize the tool name: %s",alg.name)
+
+
 
     return StatusCode.SUCCESS
 
@@ -108,6 +133,7 @@ class TEventLoop( Logger ):
     # retrieve values 
     entries = self.getEntries()
     ### Loop over events
+    from Gaugi import progressbar
     if not self._mute_progressbar:
       step = int(entries/100) if int(entries/100) > 0 else 1
       for entry in progressbar(range(self._entries), entries, step=step, prefix= "Looping over entries ", logger=self._logger):
@@ -164,7 +190,7 @@ class TEventLoop( Logger ):
 
 
   def run( self, nov=-1 ):
-    self.nov = nov
+    self._nov = nov
     self.initialize()
     self.execute()
     self.finalize()
