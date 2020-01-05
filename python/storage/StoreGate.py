@@ -1,18 +1,20 @@
 
 
-
 __all__ = ['StoreGate','restoreStoreGate']
+
+
 from Gaugi.messenger  import Logger, LoggingLevel
 import numpy as np
 
 
 class StoreGate( Logger ) :
 
+
   def __init__( self, outputFile, **kw ):
     Logger.__init__(self,**kw)
     if not outputFile.endswith('.root'):
       outputFile += '.root'
-    from Gaugi import retrieve_kw
+    from Gaugi.utilities import retrieve_kw
     # Use this property to rebuild the storegate from a root file
     self._restoreStoreGate=retrieve_kw(kw,'restoreStoreGate',False)
     filterDirs=retrieve_kw(kw,'filterDirs', None)
@@ -40,8 +42,10 @@ class StoreGate( Logger ) :
         self._dirs.append(name)
         self._objects[name]=obj
 
+
   def local(self):
     return self._outputFile
+
 
   #Save objects and delete storegate
   def __del__(self):
@@ -55,8 +59,10 @@ class StoreGate( Logger ) :
     if not self._restoreStoreGate:
       self._file.Close()
 
+
   def write(self):
     self._file.Write()
+
 
   #Create a folder
   def mkdir(self, theDir):
@@ -67,6 +73,7 @@ class StoreGate( Logger ) :
       self._file.cd(fullpath)
       self._currentDir = fullpath
       self._logger.verbose('Created directory with name %s', theDir)
+
 
   #Go to the pointed directory
   def cd(self, theDir):
@@ -118,8 +125,10 @@ class StoreGate( Logger ) :
       self._logger.warning('Object with path %s doesnt exist', fullpath)
       return None
 
+
   def getDir(self, path):
     return self._file.GetDirectory(path)
+
 
   # Use this to set labels into the histogram
   def setLabels(self, feature, labels):
@@ -136,16 +145,18 @@ class StoreGate( Logger ) :
     else:
       self._logger.warning("Can not set the labels because this feature (%s) does not exist into the storage",feature)
 
+
   def collect(self):
     self._objects.clear()
     self._dirs = list()
 
+
   def getObjects(self):
     return self._objects
 
+
   def getDirs(self):
     return self._dirs
-
 
 
   def merge(self, sg):
@@ -162,6 +173,7 @@ class StoreGate( Logger ) :
           if path in self._objects:
             mobj = self.histogram(path)  
             if mobj: mobj.Add( obj )
+
 
   # Use this method to retrieve the dirname and root object
   def __restore(self,d, basepath="/", filterDirs=None):
@@ -181,7 +193,6 @@ class StoreGate( Logger ) :
           yield basepath+kname, d.Get(kname)
     except AttributeError as e:
       self._logger.debug("Ignore reading object of type %s.",type(d))
-
 
 
 

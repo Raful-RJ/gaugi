@@ -16,6 +16,7 @@ import sys
 import shutil
 import signal
 from time import sleep, time
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -28,6 +29,7 @@ except NameError:
 
 class BadFilePath(ValueError): pass
 
+
 # Python 3 fix
 def convert(data):
   if isinstance(data, bytes):  return data.decode()
@@ -37,7 +39,108 @@ def convert(data):
   return data
 
 
+
+
+def expandPath(path):
+  " Returns absolutePath path expanding variables and user symbols "
+  if not isinstance( path, basestring):
+    raise BadFilePath(path)
+  try:
+    return os.path.abspath( os.path.join(os.path.dirname(path), os.readlink( os.path.expanduser( os.path.expandvars( path ) ) ) ) )
+  except OSError:
+    return os.path.abspath( os.path.expanduser( os.path.expandvars( path ) ) )
+
+
+
+
+
+def expandFolders( pathList, filters = None, logger = None, level = None):
+  """
+    Expand all folders to the contained files using the filters on pathList
+
+    Input arguments:
+
+    -> pathList: a list containing paths to files and folders;
+    filters;
+    -> filters: return a list for each filter with the files contained on the
+    list matching the filter glob.
+    -> logger: whether to print progress using logger;
+    -> level: logging level to print messages with logger;
+
+    WARNING: This function is extremely slow and will severely decrease
+    performance if used to expand base paths with several folders in it.
+  """
+  if not isinstance( pathList, (list,tuple,) ):
+    pathList = [pathList]
+  from glob import glob
+  if filters is None:
+    filters = ['*']
+  if not( type( filters ) in (list,tuple,) ):
+    filters = [ filters ]
+  retList = [[] for idx in range(len(filters))]
+  from Gaugi.utilities import progressbar, traverse
+  pathList = list(traverse([glob(path) if '*' in path else path for path in traverse(pathList,simple_ret=True)],simple_ret=True))
+  for path in progressbar( pathList, len(pathList), 'Expanding folders: ', 60, 50,
+                           True if logger is not None else False, logger = logger,
+                           level = level):
+    path = expandPath( path )
+    if not os.path.exists( path ):
+      raise ValueError("Cannot reach path '%s'" % path )
+    if os.path.isdir(path):
+      for idx, filt in enumerate(filters):
+        cList = filter(lambda x: not(os.path.isdir(x)), [ f for f in glob( os.path.join(path,filt) ) ])
+        if cList:
+          retList[idx].extend(cList)
+      folders = [ os.path.join(path,f) for f in os.listdir( path ) if os.path.isdir( os.path.join(path,f) ) ]
+      if folders:
+        recList = expandFolders( folders, filters )
+        if len(filters) is 1:
+          recList = [recList]
+        for l in recList:
+          retList[idx].extend(l)
+    else:
+      for idx, filt in enumerate(filters):
+        if path in glob( os.path.join( os.path.dirname( path ) , filt ) ):
+          retList[idx].append( path )
+  if len(filters) is 1:
+    retList = retList[0]
+  return retList
+
+
+
+
+def getExtension( filename, nDots = None):
+  """
+    Get file extension.
+
+    Inputs:
+    -> filename;
+    -> nDots: the maximum number of dots extesions should have.
+  """
+  filename = filename.split('.')
+  lParts = len(filename)
+  if nDots is None: nDots = (lParts - 1)
+  nDots = - nDots
+  if nDots <= -lParts: nDots = - (lParts - 1)
+  if nDots > -1:
+    return ''
+  return '.'.join(filename[nDots:])
+
+def checkExtension( filename, ext, ignoreNumbersAfterExtension = True):
+  """
+    Check if file matches extension(s) ext. If checking for multiple
+    extensions, use | to separate the extensions.
+  """
+  return bool(__extRE(ext, ignoreNumbersAfterExtension).match( filename ))
+
+
+
+
+
+
+
 from Gaugi.messenger import Logger
+
 class LockFile( Logger ):
   """
   Simple lock file
@@ -65,14 +168,6 @@ class LockFile( Logger ):
   def __del__( self ):
     self.delete()
 
-def expandPath(path):
-  " Returns absolutePath path expanding variables and user symbols "
-  if not isinstance( path, basestring):
-    raise BadFilePath(path)
-  try:
-    return os.path.abspath( os.path.join(os.path.dirname(path), os.readlink( os.path.expanduser( os.path.expandvars( path ) ) ) ) )
-  except OSError:
-    return os.path.abspath( os.path.expanduser( os.path.expandvars( path ) ) )
 
 def watchLock(filename):
   logger = Logger.getModuleLogger( "watchLock" )
@@ -85,6 +180,8 @@ def watchLock(filename):
     sleep(1)
   lockFile = LockFile( lockFileName )
   return lockFile
+
+
 
 def save(o, filename, **kw):
   """
@@ -154,6 +251,8 @@ def save(o, filename, **kw):
     lockFile.delete()
   return filename
 
+
+
 def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = False,
          useGenerator = False, tarMember = None, ignore_zeros = True,
          extractAll = False, eraseTmpTarMembers = True,
@@ -221,7 +320,6 @@ def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = F
     else:
       f = open(filename,'r')
 
-
     try: # python 3
       o = cPickle.load(f,encoding='bytes')
       f.close()
@@ -233,11 +331,11 @@ def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = F
       f.close()
       o = transformDataRawData( o, filename, None )
 
-
-
     return [o] if useGenerator else o
   # end of (if filename)
 # end of (load)
+
+
 
 
 def __load_tar(filename, mode, allowTmpFile, transformDataRawData, tarMember,
@@ -263,7 +361,7 @@ def __load_tar(filename, mode, allowTmpFile, transformDataRawData, tarMember,
       tmpFolderPath=tempfile.mkdtemp()
       if useSubprocess:
         from subprocess import Popen, PIPE, CalledProcessError
-        from Gaugi import is_tool
+        from Gaugi.utilities import is_tool
         tar_cmd = 'gtar' if is_tool('gtar') else 'tar'
         # TODO This will crash if someday someone uses a member in file that is
         # not in root path at the tarfile.
@@ -319,20 +417,6 @@ def __load_tar(filename, mode, allowTmpFile, transformDataRawData, tarMember,
             yield data
         if extractAll:
           break
-      #else:
-      #  if extractAll:
-      #    logger.info("Untaring all members to %s...", tmpFolderPath)
-      #    f.extractall(path=tmpFolderPath, )
-      #  else:
-      #    f.extractall(path=tmpFolderPath, members=(entry,))
-      #  for entry in memberList if extractAll else [entry]:
-      #    memberName = entry.name if type(entry) is tarfile.TarInfo else entry
-      #    oFile = os.path.join(tmpFolderPath, memberName)
-      #    print oFile
-      #    with open(oFile) as f_member:
-      #      yield transformDataRawData( cPickle.load(f_member), oFile if extractAll else filename, entry )
-      #  if extractAll:
-      #    break
       if eraseTmpTarMembers:
         shutil.rmtree(tmpFolderPath)
     else:
@@ -344,6 +428,8 @@ def __load_tar(filename, mode, allowTmpFile, transformDataRawData, tarMember,
   if not useSubprocess:
     f.close()
 # end of (load_tar)
+
+
 
 class __TransformDataRawData( object ):
   """
@@ -360,7 +446,7 @@ class __TransformDataRawData( object ):
     Run transformation
     """
     if self.useHighLevelObj:
-      from Gaugi.RawDictStreamable import retrieveRawDict
+      from Gaugi.streamable.RawDictStreamable import retrieveRawDict
       from numpy.lib.npyio import NpzFile
       if type(o) is NpzFile:
         o = dict(o)
@@ -370,81 +456,7 @@ class __TransformDataRawData( object ):
     o = appendToOutput( o, self.returnFileMember, tmember )
     return o
 
-def expandFolders( pathList, filters = None, logger = None, level = None):
-  """
-    Expand all folders to the contained files using the filters on pathList
 
-    Input arguments:
-
-    -> pathList: a list containing paths to files and folders;
-    filters;
-    -> filters: return a list for each filter with the files contained on the
-    list matching the filter glob.
-    -> logger: whether to print progress using logger;
-    -> level: logging level to print messages with logger;
-
-    WARNING: This function is extremely slow and will severely decrease
-    performance if used to expand base paths with several folders in it.
-  """
-  if not isinstance( pathList, (list,tuple,) ):
-    pathList = [pathList]
-  from glob import glob
-  if filters is None:
-    filters = ['*']
-  if not( type( filters ) in (list,tuple,) ):
-    filters = [ filters ]
-  retList = [[] for idx in range(len(filters))]
-  from Gaugi import progressbar, traverse
-  pathList = list(traverse([glob(path) if '*' in path else path for path in traverse(pathList,simple_ret=True)],simple_ret=True))
-  for path in progressbar( pathList, len(pathList), 'Expanding folders: ', 60, 50,
-                           True if logger is not None else False, logger = logger,
-                           level = level):
-    path = expandPath( path )
-    if not os.path.exists( path ):
-      raise ValueError("Cannot reach path '%s'" % path )
-    if os.path.isdir(path):
-      for idx, filt in enumerate(filters):
-        cList = filter(lambda x: not(os.path.isdir(x)), [ f for f in glob( os.path.join(path,filt) ) ])
-        if cList:
-          retList[idx].extend(cList)
-      folders = [ os.path.join(path,f) for f in os.listdir( path ) if os.path.isdir( os.path.join(path,f) ) ]
-      if folders:
-        recList = expandFolders( folders, filters )
-        if len(filters) is 1:
-          recList = [recList]
-        for l in recList:
-          retList[idx].extend(l)
-    else:
-      for idx, filt in enumerate(filters):
-        if path in glob( os.path.join( os.path.dirname( path ) , filt ) ):
-          retList[idx].append( path )
-  if len(filters) is 1:
-    retList = retList[0]
-  return retList
-
-def getExtension( filename, nDots = None):
-  """
-    Get file extension.
-
-    Inputs:
-    -> filename;
-    -> nDots: the maximum number of dots extesions should have.
-  """
-  filename = filename.split('.')
-  lParts = len(filename)
-  if nDots is None: nDots = (lParts - 1)
-  nDots = - nDots
-  if nDots <= -lParts: nDots = - (lParts - 1)
-  if nDots > -1:
-    return ''
-  return '.'.join(filename[nDots:])
-
-def checkExtension( filename, ext, ignoreNumbersAfterExtension = True):
-  """
-    Check if file matches extension(s) ext. If checking for multiple
-    extensions, use | to separate the extensions.
-  """
-  return bool(__extRE(ext, ignoreNumbersAfterExtension).match( filename ))
 
 def __extRE(ext, ignoreNumbersAfterExtension = True):
   """
@@ -457,6 +469,8 @@ def __extRE(ext, ignoreNumbersAfterExtension = True):
   # remove all first dots
   return re.compile(r'(.*)\.(' + r'|'.join(ext) + r')' + \
                     (r'(\.[0-9]*|)' if ignoreNumbersAfterExtension else '()') + r'$')
+
+
 
 def ensureExtension( filename, extL, ignoreNumbersAfterExtension = True ):
   """
@@ -494,6 +508,8 @@ def ensureExtension( filename, extL, ignoreNumbersAfterExtension = True ):
   else:
     filename += ext
   return filename
+
+
 
 def changeExtension( filename, newExtension, knownFileExtensions = ['tgz', 'tar.gz', 'tar.xz','tar',
                                                                     'pic.gz', 'pic.xz', 'pic',
@@ -535,6 +551,8 @@ def changeExtension( filename, newExtension, knownFileExtensions = ['tgz', 'tar.
   else:
     return filename + newExtension
 
+
+
 def prependAppendToFileName( filename, prependStr, appendStr, knownFileExtensions = ['tgz', 'tar.gz', 'tar.xz','tar',
                                                                                      'pic.gz', 'pic.xz', 'pic',
                                                                                      'npz', 'npy', 'root','pdf','jpg','jpeg'],
@@ -543,6 +561,8 @@ def prependAppendToFileName( filename, prependStr, appendStr, knownFileExtension
                       moreRetryExtensions = [],
                       ignoreNumbersAfterExtension = True,
                       separator = '_'):
+
+
   filename = prependToFileName( prependStr, filename, separator )
   filename = appendToFileName( filename, appendStr, knownFileExtensions,
                       retryExtensions,
@@ -552,12 +572,16 @@ def prependAppendToFileName( filename, prependStr, appendStr, knownFileExtension
                       separator )
   return filename
 
+
+
 def prependToFileName( prependStr, filename, separator = '_'):
   """
   Prepend string to file name
   """
   if prependStr.endswith(separator): separator = ''
   return os.path.dirname(filename) + prependStr + separator + os.path.basename(filename)
+
+
 
 def appendToFileName( filename, appendStr, knownFileExtensions = ['tgz', 'tar.gz', 'tar.xz','tar',
                                                                   'pic.gz', 'pic.xz', 'pic',
@@ -606,6 +630,8 @@ def appendToFileName( filename, appendStr, knownFileExtensions = ['tgz', 'tar.gz
   else:
     return filename + ( separator if not(filename.endswith(separator) or appendStr.startswith(separator)) else '') + appendStr
 
+
+
 def getMD5(filepath):
   """
   Get files md5 hash
@@ -620,6 +646,8 @@ def getMD5(filepath):
     md5_returned = hashlib.md5(data).hexdigest()
   return md5_returned
 
+
+
 def checkFile(filepath, md5sum = None):
   """
   Checks if file exists and if md5sum matches
@@ -631,6 +659,7 @@ def checkFile(filepath, md5sum = None):
            md5sum is None or
            getMD5(filepath) == md5sum
          )
+
 
 from Gaugi import EnumStringification
 class WriteMethod( EnumStringification ):
@@ -672,26 +701,27 @@ def cat_files_py(flist, ofile, op, logger = None, level = None):
     # end of for fname in progressbar
   # end of with open(ofile)
 
+
+
 def findFile( filename, pathlist, access ):
   """
      Find <filename> with rights <access> through <pathlist>.
      Author: Wim Lavrijsen (WLavrijsen@lbl.gov)
      Copied from 'atlas/Control/AthenaCommon/python/Utils/unixtools.py'
   """
-
   # special case for those filenames that already contain a path
   if os.path.dirname( filename ):
     if os.access( filename, access ):
       return filename
-
   # test the file name in all possible paths until first found
   for path in pathlist:
     f = os.path.join( path, filename )
     if os.access( f, access ):
       return f
-
   # no such accessible file avalailable
   return None
+
+
 
 def mkdir_p(path):
   import errno
@@ -703,6 +733,8 @@ def mkdir_p(path):
     if exc.errno == errno.EEXIST and os.path.isdir(path):
       pass
     else: raise IOError
+
+
 
 def getFiles(folder, ftype = os.path.isfile, fullpath = True):
   """

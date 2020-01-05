@@ -224,7 +224,9 @@ def _setOutputLevel(self, value):
   logging.Logger.setLevel(self, value)
   self._ringercore_logger_parent._level = value
 
-class Logger( object ):
+
+
+class MsgBase( object ):
   """
     Simple class for giving inherited classes logging capability as well as the
     possibility for being serialized by pickle.

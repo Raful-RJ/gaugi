@@ -21,7 +21,8 @@ class StatusTool(EnumStringification):
   NOT_FINALIZED = -3
  
 
-class StatusWatchDog(EnumStringification):
+# Watch dog status
+class StatusWTD(EnumStringification):
   """
     Use this to enable or disable the tool in execute call
   """

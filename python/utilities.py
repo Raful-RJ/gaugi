@@ -20,40 +20,29 @@ import numpy as np
 from Gaugi.gtypes import NotSet
 from Gaugi.Configure import RCM_NO_COLOR, RCM_GRID_ENV
 
-loadedEnvFile = False
-def sourceEnvFile():
+def retrieve_kw( kw, key, default = NotSet ):
   """
-    Emulate source new_env_file.sh on python environment.
+  Use together with NotSet to have only one default value for your job
+  properties.
   """
-  try:
-    from Gaugi.messenger import Logger
-    logger = Logger.getModuleLogger(__name__)
-    import os, sys
-    global loadedEnvFile
-    if not loadedEnvFile:
-      with open(os.path.expandvars('$ROOTCOREBIN/../FastNetTool/cmt/new_env_file.sh'),'r') as f:
-        lines = f.readlines()
-        lineparser = re.compile(r'test "\$\{(?P<shellVar>[A-Z1-9]*)#\*(?P<addedPath>\S+)\}" = "\$\{(?P=shellVar)\}" && export (?P=shellVar)=\$(?P=shellVar):(?P=addedPath) || true')
-        for line in lines:
-          m = lineparser.match(line)
-          if m:
-            shellVar = m.group('shellVar')
-            if shellVar != 'PYTHONPATH':
-              continue
-            addedPath = os.path.expandvars(m.group('addedPath'))
-            if not addedPath:
-              logger.warning("Couldn't retrieve added path on line \"%s\".", line)
-              continue
-            if not os.path.exists(addedPath):
-              logger.warning("Couldn't find following path \"%s\".", addedPath)
-              continue
-            if not addedPath in os.environ[shellVar]:
-              sys.path.append(addedPath)
-              logger.info("Successfully added path: \"%s\".", line)
-      loadedEnvFile=True
-  except IOError:
-    raise RuntimeError("Cannot find new_env_file.sh, did you forget to set environment or compile the package?")
-  
+  if not key in kw or kw[key] is NotSet:
+    kw[key] = default
+  return kw.pop(key)
+
+def checkForUnusedVars(d, fcn = None):
+  """
+    Checks if dict @d has unused properties and print them as warnings
+  """
+  for key in d.keys():
+    if d[key] is NotSet: continue
+    msg = 'Obtained not needed parameter: %s' % key
+    if fcn:
+      fcn(msg)
+    else:
+      print('WARNING:%s' % msg)
+
+
+
 def str_to_class(module_name, class_name):
   try:
     import importlib
@@ -91,6 +80,8 @@ def csvStr2List( csvStr ):
     csvStr = [csvStr]
   return csvStr
 
+
+
 def is_tool(name):
   import subprocess
   try:
@@ -100,6 +91,8 @@ def is_tool(name):
     if e.errno == os.errno.ENOENT:
       return False
   return True
+
+
 
 def get_attributes(o, **kw):
   """
@@ -112,6 +105,8 @@ def get_attributes(o, **kw):
   return [(a[0] if onlyVars else a) for a in inspect.getmembers(o, lambda a:not(inspect.isroutine(a))) \
              if not(a[0].startswith('__') and a[0].endswith('__')) \
                 and (getProtected or not( a[0].startswith('_') or a[0].startswith('__') ) ) ]
+
+
 
 def printArgs(args, fcn = None):
   try:
@@ -256,338 +251,6 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
     raise e
   # end of (final treatments)
 
-def measureCallTime(f, *args, **kw):
-  from logging import StreamHandler
-  from Gaugi.messenger.Logger import nlStatus, resetNlStatus
-  import sys
-  msg = kw.pop('__msg', '' )
-  logger = kw.pop('__logger', None )
-  no_bl = kw.pop('__no_bl', True )
-  if logger:
-    if not nlStatus(): 
-      sys.stdout.write("\n")
-      sys.stdout.flush()
-    if no_bl:
-      from Gaugi.messenger.Logger import StreamHandler2
-      prev_emit = []
-      # TODO On python3, all we need to do is to change the Handler.terminator
-      for handler in logger.handlers:
-        if type(handler) is StreamHandler:
-          stream = StreamHandler2( handler )
-          prev_emit.append( handler.emit )
-          setattr(handler, StreamHandler.emit.__name__, stream.emit_no_nl)
-  level = kw.pop('__level', None )
-  from time import time
-  if level is None:
-    from Gaugi.messenger import LoggingLevel
-    level = LoggingLevel.DEBUG
-  if not msg:
-    msg = 'Executing ' + f.__name__ + '(' + ','.join(args) + ','.join([(str(key) + '=' + str(val)) for key, val in kw.iteritems()]) + ')'
-  if not msg.endswith('...') and not msg.endswith('... '): msg += '...'
-  if not msg.endswith(' '): msg += ' '
-  if logger:
-    fn, lno, func = logger.findCaller() 
-    record = logger.makeRecord(logger.name, level, fn, lno, 
-                               "%s\r",
-                               (msg), 
-                               None, 
-                               func=func)
-    record.nl = False
-    # emit message
-    logger.handle(record)
-  start = time()
-  ret = f(*args, **kw)
-  end = time()
-  if logger:
-    if no_bl:
-      # override back
-      for handler in logger.handlers:
-        if type(handler) is StreamHandler:
-          try:
-            setattr( handler, StreamHandler.emit.__name__, prev_emit.pop() )
-          except IndexError:
-            pass
-    record.msg = record.msg[:-1] + 'done!'
-    logger.handle(record)
-    logger.log( level, '%s execution took %.2fs.', f.__name__, end - start)
-    if no_bl:
-      resetNlStatus()
-  return ret
-
-def measureLoopTime(it, prefix = 'Iteration', prefix_end = '', 
-                    logger = None, level = None, showLoopBenchmarks = True):
-  from time import time
-  if level is None:
-    from Gaugi.messenger import LoggingLevel
-    level = LoggingLevel.DEBUG
-  start = time()
-  for i, item in enumerate(it):
-    lStart = time()
-    yield item
-    end = time()
-    if showLoopBenchmarks:
-      if logger:
-        logger.log( level, '%s %d took %.2fs.', prefix, i, end - lStart)
-      else:
-        sys.stdout.write( level, '%s %d took %.2fs.\n' % ( prefix, i, end - lStart ) )
-        sys.stdout.flush()
-  if logger:
-    logger.log( level, 'Finished looping (%s) in %.2fs.', prefix_end, end - start)
-  else:
-    sys.stdout.write( level, 'Finished looping (%s) in %.2fs.\n' % ( prefix_end, end - start) )
-    sys.stdout.flush()
-
-
-def select( fl, filters, popListInCaseOneItem = True ):
-  """
-  Return a selection from fl maching f
-
-  WARNING: This selection method retrieves the same string contained in fl
-  if it matches two different filters.
-  """
-  try: 
-    iter(filters); 
-    if isinstance(filters,basestring): raise Exception
-  except: filters = [filters]
-  ret = []
-  from Gaugi import traverse
-  for filt in filters:
-    taken = filter(lambda obj: type(obj) in (str,unicode) and filt in obj, traverse(fl, simple_ret = True))
-    ret.append(taken)
-  if popListInCaseOneItem and len(ret) == 1: ret = ret[0]
-  return ret
-
-def reshape( input ):
-  #sourceEnvFile()
-  import numpy as np
-  return np.array(input.tolist())
-
-def reshape_to_array( input ):
-  import numpy as np
-  return np.reshape(input, (1,np.product(input.shape)))[0]
-
-
-def trunc_at(s, d, n=1):
-  "Returns s truncated at the n'th (1st by default) occurrence of the delimiter, d."
-  return d.join(s.split(d)[:n])
-
-def start_after(s, d, n=1):
-  "Returns s after at the n'th (1st by default) occurrence of the delimiter, d."
-  return d.join(s.split(d)[n:])
-
-#def stdvector(vecType, *argl):
-#  from ROOT.std import vector
-#  v = vector(vecType)
-#  return v(*argl)
-
-def list_to_stdvector(vecType,l):
-  from ROOT.std import vector
-  vec = vector(vecType)()
-  for v in l:
-    vec.push_back(v)
-  return vec
-
-def stdvector_to_list(vec, size=None):
-  if size:
-    l=size*[0]
-  else:
-    l = vec.size()*[0]
-  for i in range(vec.size()):
-    l[i] = vec[i]
-  return l
-
-
-def floatFromStr(str_):
-  "Return float from string, checking if float is percentage"
-  if '%' in str_:
-    return float(str_.strip('%'))*100.
-  return float(str_)
-
-class Include:
-  def __call__(self, filename, globalz=None, localz=None, clean=False):
-    "Simple routine to execute python script, possibly keeping global and local variables."
-    searchPath = re.split( ',|' + os.pathsep, os.environ['PYTHONPATH'] )
-    if '' in searchPath:
-      searchPath[ searchPath.index( '' ) ] = str(os.curdir)
-    from Gaugi.FileIO import findFile
-    trueName = findFile(filename, searchPath, os.R_OK )
-    gworkspace = {}
-    lworkspace = {}
-    if globalz: gworkspace.update(globalz)
-    if localz: lworkspace.update(localz)
-    if not clean:
-      gworkspace.update(__main__.__dict__)
-      lworkspace.update(__main__.__dict__)
-    if trueName: 
-      try:
-        execfile(trueName, gworkspace, lworkspace)
-      except NameError as e:
-        if e == "name 'execfile' is not defined":
-          Include.xfile(trueName, globalz, localz)
-        else:
-          raise e
-    else:
-      raise ImportError("Cannot include file: %s" % filename)
-
-  @classmethod
-  def xfile(cls, afile, globalz=None, localz=None):
-    "Alternative to execfile for python3.0"
-    with open(afile, "r") as fh:
-      exec(fh.read(), globalz, localz)
-include = Include()
-
-def geomean(nums):
-  return (reduce(lambda x, y: x*y, nums))**(1.0/len(nums))
-
-def mean(nums):
-  return (sum(nums)/len(nums))
-
-def calcSP( pd, pj ):
-  """
-    ret  = calcSP(x,y) - Calculates the normalized [0,1] SP value.
-    effic is a vector containing the detection efficiency [0,1] of each
-    discriminating pattern.  
-  """
-  from numpy import sqrt
-  return sqrt(geomean([pd,pj]) * mean([pd,pj]))
-
-class Roc(object):
-  """
-    Create ROC information holder
-  """
-  #from RingerCore.RawDictStreamable import RawDictStreamable
-  #__metaclass__ = RawDictStreamable
-
-  def __init__( self, label, input_, target = NotSet, numPts = 1000, npConst = NotSet, reference = None ):
-    """
-			def ROC( output, target, label, numPts = 1000, npConst = npConstants() ):
-
-      Input Parameters are:
-         output -> The output space generated by the classifier.
-         target -> The targets which should be returned by the classifier.
-         label ->  A label to identify the ROC.
-         numPts -> (1000) The number of points to generate the ROC.
-         npConst -> (npConstants()) The number of points to generate the ROC.
-    """
-    from Gaugi.npConstants import npConstants
-    if npConst is NotSet: npConst = npConstants()
-    self.label = label
-    if target is NotSet:
-      self.spVec    = input_[0]
-      self.detVec   = input_[1]
-      self.faVec    = input_[2]
-      self.cutVec   = input_[3]
-    else:
-      # We have to determine what is signal and noise from the datasets using
-      # the targets:
-      outSignal = input_[np.where(target == 1.)[1]]
-      outNoise = input_[np.where(target == -1.)[1]]
-      outSignal = np.sort(outSignal, kind='heapsort')
-      outNoise  = np.sort(outNoise , kind='heapsort')
-      self.cutVec = np.arange( -1., 1., 2. / ( numPts ) )
-      self.detVec = npConst.fp_zeros( numPts )
-      self.faVec  = npConst.fp_zeros( numPts )
-      self.spVec  = npConst.fp_zeros( numPts )
-      lenSig   = float( len(outSignal) )
-      lenNoise = float( len(outNoise)  )
-      for i in range( numPts ):
-        self.detVec[i] = ( lenSig   - np.searchsorted( outSignal, self.cutVec[i] ) ) / lenSig
-        self.faVec[i]  = ( lenNoise - np.searchsorted( outNoise,  self.cutVec[i] ) ) / lenNoise
-        self.spVec[i]   = calcSP( self.detVec[i], 1. - self.faVec[i] )
-    self.maxIdx = np.argmax(self.spVec)
-    self.sp  = self.spVec  [ self.maxIdx ]
-    self.det = self.detVec [ self.maxIdx ]
-    self.fa  = self.faVec  [ self.maxIdx ]
-    self.cut = self.cutVec [ self.maxIdx ]
-
-#Helper function
-def Roc_to_histogram(g, nsignal, nnoise):
-  import numpy as np
-  npoints = g.GetN()
-  nsignalLastBin = 0
-  nnoiseLastBin  = 0
-  nsignalBin = np.array([0]*npoints)
-  nnoiseBin = np.array([0]*npoints)
-  totalSignal = totalNoise =0
-  pd = g.GetY()
-  fa = g.GetX()
-  for np in range( npoints ):
-    nsignalBin[np] = nsignal - int(pd[np]*nsignal) - nsignalLastBin
-    nnoiseBin[np] = nnoise - int(fa[np]*nnoise) - nnoiseLastBin
-    nsignalLastBin += nsignalBin[np]
-    nnoiseLastBin += nnoiseBin[np]
-    totalSignal += nsignalBin[np]
-    totalNoise += nnoiseBin[np]
-  #Loop over Receive Operating Curve
-
-  signalTarget = 1
-  noiseTarget = -1
-  #Prepare the estimation output
-  resolution = (signalTarget - noiseTarget)/float(npoints)
-  binValue = noiseTarget
-  signalOutput = []
-  noiseOutput = []
-
-  for np in range(npoints):
-    signalOutput += nsignalBin[np]*[binValue]
-    noiseOutput += nnoiseBin[np]*[binValue]
-    binValue += resolution
-
-  return signalOutput, noiseOutput
-
-def keyboard():
-  """ 
-    Function that mimics the matlab keyboard command.
-  """
-  import pdb; pdb.set_trace()
-
-
-def createRootParameter( type_name, name, value):
-  from ROOT import TParameter
-  return TParameter(type_name)(name,value)
-
-def timed(f):
-  def func(*args):
-    import time
-    start = time.time()
-    ret = f(*args)
-    took = time.time() - start
-    print("%s took %f" % (f.__name__,took))
-    return ret
-  return func
-
-def getFilters( filtFinder, objs, idxs = None, printf = None):
-  """
-    Get filters using filter finder
-  """
-  filt = filtFinder
-  if hasattr(filtFinder,'__call__'):
-    if type(filtFinder) is type:
-      filtFinder = filtFinder()
-    filt = filtFinder( objs )
-    #Retrieve only the bin IDx selected by arg
-    if idxs is not None:
-      try:
-        filt = [filt[idx] for idx in idxs]
-      except IndexError:
-        raise IndexError('This bin index does not exist.')
-      if printf is not None:
-        printf('Analyzing only the bin index %r', idxs)
-    printf('Found following filters (total:%d): %r', len(filt), filt)
-  return filt
-
-def apply_sort( inputCollection, sortedIdx ):
-  """
-    Returns inputCollection sorted accordingly to sortedIdx
-  """
-  return [inputCollection[idx] for idx in sortedIdx]
-
-def scale10( num ):
-  """
-    Returns the scale 10 power index of num
-  """
-  import math
-  return math.ceil(math.log10(abs(num))) if num else 0
 
 def appendToOutput( o, cond, what):
   """
@@ -598,39 +261,4 @@ def appendToOutput( o, cond, what):
     else: o = o, what
   return o
 
-def secureExtractNpItem( npArray ):
-  try:
-    return npArray.item()
-  except AttributeError:
-    return npArray
 
-
-def emptyArgumentsPrintHelp(parser):
-  """
-  If user do not enter any argument, print help
-  """
-  import sys
-  if len(sys.argv)==1:
-    from Gaugi.messenger.Logger import _getFormatter
-    sys.stdout.write(_getFormatter().color_seq % { 'color' : _getFormatter().colors['INFO']})
-    #mainLogger = Logger.getModuleLogger( __name__)
-    #mainLogger.write = mainLogger.info
-    #parser.print_help(file = mainLogger)
-    parser.print_help()
-    sys.stdout.write(_getFormatter().reset_seq)
-    parser.exit(1)
-
-def os_environ_get( env, default_env ):
-  import os
-  ENV=os.environ.get(env,default_env)
-  if ENV=='':
-    return default_env
-  return ENV
-
-
-def grouper(iterable, n, fillvalue=None):
-  "Collect data into fixed-length chunks or blocks"
-  # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
-  args = [iter(iterable)] * n
-  from itertools import izip_longest
-  return izip_longest(fillvalue=fillvalue, *args)
