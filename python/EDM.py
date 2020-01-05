@@ -1,20 +1,20 @@
 
 __all__ = ['EDM']
 
-from Gaugi.messenger import MsgStream
+from Gaugi.messenger import Logger
 from Gaugi.messenger.macros import *
 from Gaugi import NotSet, EnumStringification, StatusCode
 
 
 
-class EDM( MsgStream ):
+class EDM( Logger ):
 
   # set the default skimmed dataframe
   _dataframe = NotSet
   
   def __init__(self):
     
-    MsgStream.__init__(self)
+    Logger.__init__(self)
     self._idx = 0
     self._is_hlt = False
     self._decoration = dict()

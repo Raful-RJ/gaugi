@@ -1,7 +1,7 @@
 __all__ = ['LoggingLevel', 'Logger', 'nlStatus', 'resetNlStatus']
 
 from Gaugi.gtypes  import EnumStringification
-from Gaugi.Configure import retrieve_kw
+from Gaugi import retrieve_kw
 import logging
 
 
@@ -226,7 +226,7 @@ def _setOutputLevel(self, value):
 
 
 
-class MsgBase( object ):
+class Logger( object ):
   """
     Simple class for giving inherited classes logging capability as well as the
     possibility for being serialized by pickle.
@@ -289,7 +289,7 @@ class MsgBase( object ):
       Retrieve from args the logger, or create it using default configuration.
     """
     d.update( kw )
-    from Gaugi.Configure import retrieve_kw
+    from Gaugi import retrieve_kw
     from Gaugi.gtypes import NotSet
     if 'level' in d:
       if d['level'] not in (None, NotSet):

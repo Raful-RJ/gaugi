@@ -7,9 +7,21 @@ except NameError:
     xrange = range
 
 
+import os, multiprocessing
+RCM_GRID_ENV = int(os.environ.get('RCM_GRID_ENV',0))
+RCM_NO_COLOR = int(os.environ.get('RCM_NO_COLOR',1))
+OMP_NUM_THREADS = int(os.environ.get('OMP_NUM_THREADS',multiprocessing.cpu_count()))
+
+
+
 from . import gtypes
 __all__.extend(gtypes.__all__)
 from .gtypes import *
+
+from . import utilities
+__all__.extend(utilities.__all__)
+from .utilities import *
+
 
 from . import messenger
 __all__.extend(messenger.__all__)
@@ -34,10 +46,6 @@ from .parallel import *
 from . import constants
 __all__.extend(constants.__all__)
 from .constants import *
-
-from . import utilities
-__all__.extend(utilities.__all__)
-from .utilities import *
 
 from . import EventContext
 __all__.extend(EventContext.__all__)

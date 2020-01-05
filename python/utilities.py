@@ -1,12 +1,7 @@
 #coding: utf-8
-__all__ = ['Include', 'include', 'str_to_class', 'Roc', 'calcSP',
-           'csvStr2List', 'floatFromStr', 'geomean', 'get_attributes',
-           'mean',  'printArgs', 'reshape', 'reshape_to_array',
-           'stdvector_to_list','list_to_stdvector', 'trunc_at', 'progressbar',
-           'select', 'timed', 'getFilters', 'start_after', 'appendToOutput',
-           'apply_sort', 'scale10', 'measureLoopTime', 'keyboard', 
-           'is_tool', 'secureExtractNpItem', 'emptyArgumentsPrintHelp', 
-           'os_environ_get', 'measureCallTime', 'grouper',]
+__all__ = ['str_to_class','csvStr2List', 'get_attributes','printArgs', 
+           'stdvector_to_list','list_to_stdvector', 'progressbar',
+           'appendToOutput','retrieve_kw','checkForUnusedVars']
 
 import re, os, __main__
 import sys
@@ -16,9 +11,10 @@ import pickle as cPickle
 import gzip
 import inspect
 import numpy as np
-
 from Gaugi.gtypes import NotSet
-from Gaugi.Configure import RCM_NO_COLOR, RCM_GRID_ENV
+from Gaugi import RCM_NO_COLOR, RCM_GRID_ENV
+
+
 
 def retrieve_kw( kw, key, default = NotSet ):
   """
@@ -28,6 +24,7 @@ def retrieve_kw( kw, key, default = NotSet ):
   if not key in kw or kw[key] is NotSet:
     kw[key] = default
   return kw.pop(key)
+
 
 def checkForUnusedVars(d, fcn = None):
   """
@@ -40,7 +37,6 @@ def checkForUnusedVars(d, fcn = None):
       fcn(msg)
     else:
       print('WARNING:%s' % msg)
-
 
 
 def str_to_class(module_name, class_name):
@@ -100,7 +96,7 @@ def get_attributes(o, **kw):
   """
   onlyVars = kw.pop('onlyVars', False)
   getProtected = kw.pop('getProtected', True)
-  from Gaugi.Configure import checkForUnusedVars
+  from Gaugi import checkForUnusedVars
   checkForUnusedVars(kw)
   return [(a[0] if onlyVars else a) for a in inspect.getmembers(o, lambda a:not(inspect.isroutine(a))) \
              if not(a[0].startswith('__') and a[0].endswith('__')) \
@@ -125,6 +121,40 @@ def printArgs(args, fcn = None):
       print ('INFO:%s' % msg)
   except ImportError:
     logger.info('Retrieved the following configuration: \n %r', vars(args))
+
+
+def appendToOutput( o, cond, what):
+  """
+  When multiple outputs are configurable, use this method to append to output in case some option is True.
+  """
+  if cond:
+    if type(o) is tuple: o = o + (what,)
+    else: o = o, what
+  return o
+
+
+
+def list_to_stdvector(vecType,l):
+  from ROOT.std import vector
+  vec = vector(vecType)()
+  for v in l:
+    vec.push_back(v)
+  return vec
+
+
+def stdvector_to_list(vec, size=None):
+  if size:
+    l=size*[0]
+  else:
+    l = vec.size()*[0]
+  for i in range(vec.size()):
+    l[i] = vec[i]
+  return l
+
+
+
+
+
 
 def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None, level = None,
                 no_bl = RCM_GRID_ENV or sys.stdout.isatty(), 
@@ -250,15 +280,5 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
     # re-raise:
     raise e
   # end of (final treatments)
-
-
-def appendToOutput( o, cond, what):
-  """
-  When multiple outputs are configurable, use this method to append to output in case some option is True.
-  """
-  if cond:
-    if type(o) is tuple: o = o + (what,)
-    else: o = o, what
-  return o
 
 

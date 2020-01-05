@@ -2,7 +2,7 @@
 __all__ = [ 
               'Color', 
               'StatusTool',
-              'StatusWatchDog',
+              'StatusWTD',
           ]
 
 

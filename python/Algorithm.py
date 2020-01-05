@@ -1,19 +1,19 @@
 
 __all__ = ['Algorithm']
 
-from Gaugi.messenger import  MsgBase
+from Gaugi.messenger import  Logger
 from Gaugi.messenger.macros import *
 from Gaugi import EnumStringification, NotSet
 from Gaugi import StatusCode
 from prometheus.enumerations import Dataframe as DataframeEnum
-from Gaugi.enumerations import StatusTool, StatusWatchDog
+from Gaugi.enumerations import StatusTool, StatusWTD
 
 
 # Base class used for all tools for this framework
-class Algorithm( MsgBase ):
+class Algorithm( Logger ):
 
   def __init__(self, name):
-    MsgBase.__init__(self)
+    Logger.__init__(self)
     self._name = name
     # flags
     self._wtd  = StatusWTD.DISABLE
