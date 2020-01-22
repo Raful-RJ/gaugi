@@ -7,13 +7,16 @@ from Gaugi import StatusCode,StatusTool,StatusWTD
 from Gaugi.gtypes import NotSet
 
 # Import all root classes
-import ROOT
+try:
+  import ROOT
+except:
+  print ('WARNING: ROOT not found. You will not be able to use the TEventLoop services provied by the gaugi core.')
 
 
 class TEventLoop( Logger ):
-    
+
   def __init__(self, name, **kw):
-   
+
     # Retrieve all information needed
     Logger.__init__(self, **kw)
     from Gaugi import retrieve_kw
@@ -48,7 +51,7 @@ class TEventLoop( Logger ):
 
     MSG_INFO( self, 'Initializing TEventLoop...')
 
-    # Use this to hold the fist good 
+    # Use this to hold the fist good
     metadataInputFile = None
     from Gaugi import progressbar
     ### Prepare to loop:
@@ -61,7 +64,7 @@ class TEventLoop( Logger ):
         continue
       # Inform user whether TTree exists, and which options are available:
       self._logger.debug("Adding file: %s", inputFile)
-      try: 
+      try:
         # Custon directory token
         if '*' in self._treePath:
           dirname = self._f.GetListOfKeys()[0].GetName()
@@ -130,7 +133,7 @@ class TEventLoop( Logger ):
 
 
   def execute( self ):
-    # retrieve values 
+    # retrieve values
     entries = self.getEntries()
     ### Loop over events
     from Gaugi import progressbar
@@ -175,7 +178,7 @@ class TEventLoop( Logger ):
         continue
       if alg.finalize().isFailure():
         MSG_ERROR( self, 'The tool %s return status code different of SUCCESS',alg.name)
-    
+
     MSG_INFO( self, 'Finalizing StoreGate service...')
     self._storegateSvc.write()
     del self._storegateSvc

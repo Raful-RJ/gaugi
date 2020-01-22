@@ -5,7 +5,6 @@ from Gaugi.messenger import  Logger
 from Gaugi.messenger.macros import *
 from Gaugi import EnumStringification, NotSet
 from Gaugi import StatusCode
-from prometheus.enumerations import Dataframe as DataframeEnum
 from Gaugi.enumerations import StatusTool, StatusWTD
 
 
