@@ -10,7 +10,8 @@ from Gaugi.gtypes import NotSet
 try:
   import ROOT
 except:
-  print ('WARNING: ROOT not found. You will not be able to use the TEventLoop services provied by the gaugi core.')
+  pass
+  #print ('WARNING: ROOT not found. You will not be able to use the TEventLoop services provied by the gaugi core.')
 
 
 class TEventLoop( Logger ):

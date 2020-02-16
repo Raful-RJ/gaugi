@@ -12,7 +12,7 @@ class Service( Logger ):
     import collections
     self._name = name
     self._tools = collections.OrderedDict()
-    MSG_INFO( self, "Creating %s as Service...", name)
+    #MSG_DEBUG( self, "Creating %s as Service...", name)
 
   def name(self):
     return self._name
