@@ -8,6 +8,9 @@ __all__ = [
            "MSG_WARNING",
            "MSG_ERROR",
            "MSG_FATAL",
+           "MSG_STR_INFO",
+           "MSG_STR_WARNING",
+           "MSG_STR_ERROR"
            ]
 
 def MSG_VERBOSE( self, msg, *args):
@@ -28,5 +31,11 @@ def MSG_ERROR( self, msg, *args):
 def MSG_FATAL( self, msg, *args):
   self._logger.fatal(msg,*args)
 
+def MSG_STR_INFO (logger, msg, *args):
+  logger._logger.info(msg, *args)
 
+def MSG_STR_WARNING (logger, msg, *args):
+  logger._logger.warning(msg, *args)
 
+def MSG_STR_ERROR (logger, msg, *args):
+  logger._logger.error(msg, *args)
