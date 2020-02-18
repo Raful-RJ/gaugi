@@ -20,6 +20,4 @@ MoreFilesForYou-*
 build
 CMakeLists.txt
 .python-version
-
-
-
+*egg*
