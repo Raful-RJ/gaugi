@@ -167,9 +167,6 @@ def _getFormatter():
                'FATAL':    bold_red,
              }
 
-    # It's possible to overwrite the message color by doing:
-    # logger.info('MSG IN MAGENTA', extra={'color' : Logger._formatter.bold_magenta})
-
     def __init__(self, msg, use_color = False):
       if use_color:
         logging.Formatter.__init__(self, self.color_seq + msg + self.reset_seq )
@@ -214,6 +211,10 @@ class StringLogger( object ):
     possibility for being serialized by pickle.
     Logger will keep its logging level even after unpickled.
   """
+
+  _formatter = _getFormatter()
+  _stringIO = StringIO()
+  _ch = _getConsoleHandler(_stringIO)
 
   def getLevel(self):
     if hasattr( self, '_level' ):
@@ -265,10 +266,10 @@ class StringLogger( object ):
   #
   # Methods for StringIO
   #
-  def getOutput():
+  def getOutput(self):
     return self._stringIO.getvalue()
 
-  def flushOutput():
+  def flushOutput(self):
     self._stringIO.truncate(0)
     return self._stringIO.seek(0)
 
@@ -276,10 +277,6 @@ class StringLogger( object ):
     """
       Retrieve from args the logger, or create it using default configuration.
     """
-
-    self._formatter = _getFormatter()
-    self._stringIO = StringIO()
-    self._ch = _getConsoleHandler(self._stringIO)
 
     d.update( kw )
     from Gaugi import retrieve_kw
@@ -290,7 +287,7 @@ class StringLogger( object ):
       else:
         d.pop('level')
     self._logger = retrieve_kw(d,'logger', None)  or \
-        Logger.getModuleLogger( d.pop('logName', self.__class__.__name__), LoggingLevel.retrieve( self.getLevel() ) )
+        self.getModuleLogger( d.pop('logName', self.__class__.__name__), LoggingLevel.retrieve( self.getLevel() ) )
     self._logger.verbose('Initialiazing %s', self.__class__.__name__)
     self._logger._ringercore_logger_parent = self
     if self._logger.level != LoggingLevel.MUTE:
@@ -329,7 +326,7 @@ class StringLogger( object ):
     self.__dict__.update(d)   # update attributes
     try:
       if self._logger is None: # Also add a logger if it is set to None
-        self._logger = Logger.getModuleLogger(self.__class__.__name__, self.level )
+        self._logger = self.getModuleLogger(self.__class__.__name__, self.level )
     except AttributeError:
-      self._logger = Logger.getModuleLogger(self.__module__, self.level )
+      self._logger = self.getModuleLogger(self.__module__, self.level )
     self._logger.setLevel( self.level )
