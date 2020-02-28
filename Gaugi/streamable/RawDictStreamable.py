@@ -4,8 +4,6 @@ __all__ = ['RawDictStreamable', 'RawDictStreamer', 'RawDictCnv', 'mangle_attr',
 
 from Gaugi.messenger import Logger
 
-mLogger = Logger.getModuleLogger( __name__ )
-
 def mangle_attr(source, attr):
   """
   Simulate python private attritubutes mangling. Taken from:
@@ -202,7 +200,7 @@ def isRawDictFormat( d ):
   return isRawDictFormat
 
 
-def retrieveRawDict( val, logger = mLogger ):
+def retrieveRawDict( val, logger = Logger.getModuleLogger( __name__ ) ):
   """
   Transform rawDict to an instance from its respective python class
   """
