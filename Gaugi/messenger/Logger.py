@@ -1,28 +1,28 @@
-__all__ = ['LoggingLevel', 'Logger', 'nlStatus', 'resetNlStatus']
+__all__ = ['LoggingLevel', 'Logger']
 
-from Gaugi.gtypes  import EnumStringification
-from Gaugi import retrieve_kw
 import logging
+from Gaugi.utilities import retrieve_kw
+from Gaugi.gtypes import EnumStringification
 
-
+class FatalError(RuntimeError):
+  pass
 
 class LoggingLevel ( EnumStringification ):
-  """
-    A wrapper for logging levels, which allows stringification of known log
-    levels.
-  """
+  #
+  #   A wrapper for logging levels, which allows stringification of known log
+  #   levels.
+  #
   VERBOSE  = logging.DEBUG - 1
   DEBUG    = logging.DEBUG
   INFO     = logging.INFO
   WARNING  = logging.WARNING
   ERROR    = logging.ERROR
-  CRITICAL = logging.CRITICAL
   FATAL    = logging.CRITICAL
   MUTE     = logging.CRITICAL # MUTE Still displays fatal messages.
 
   @classmethod
   def toC(cls, val):
-    val = LoggingLevel.retrieve( val )
+    val = LoggingLevel.retrieve( val ) 
     if val == cls.VERBOSE:
       val = 0
     else:
@@ -31,16 +31,6 @@ class LoggingLevel ( EnumStringification ):
 
 logging.addLevelName(LoggingLevel.VERBOSE, "VERBOSE")
 logging.addLevelName(LoggingLevel.FATAL,    "FATAL" )
-
-def verbose(self, message, *args, **kws):
-  """
-    Attempt to emit verbose message
-  """
-  if self.isEnabledFor(LoggingLevel.VERBOSE):
-    self._log(LoggingLevel.VERBOSE, message, args, **kws)
-
-class FatalError(RuntimeError):
-  pass
 
 def _getAnyException(args):
   exceptionType = [issubclass(arg,BaseException) if type(arg) is type else False for arg in args]
@@ -52,10 +42,31 @@ def _getAnyException(args):
     args = tuple(args)
   return Exc, args
 
+def verbose(self, message, *args, **kws):
+  """
+    Attempt to emit verbose message
+  """
+  if self.isEnabledFor(LoggingLevel.VERBOSE):
+    self._log(LoggingLevel.VERBOSE, message, args, **kws) 
+
+def debug(self, message, *args, **kws):
+  """
+    Attempt to emit debug message
+  """
+  if self.isEnabledFor(LoggingLevel.DEBUG):
+    self._log(LoggingLevel.DEBUG, message, args, **kws) 
+
+def info(self, message, *args, **kws):
+  """
+    Attempt to emit debug message
+  """
+  if self.isEnabledFor(LoggingLevel.INFO):
+    self._log(LoggingLevel.INFO, message, args, **kws) 
+
 def warning(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if self.isEnabledFor(LoggingLevel.WARNING):
-    self._log(LoggingLevel.WARNING, message, args, **kws)
+    self._log(LoggingLevel.WARNING, message, args, **kws) 
   if Exc is not None:
     if args:
       raise Exc(message % (args if len(args) > 1 else args[0]))
@@ -65,7 +76,7 @@ def warning(self, message, *args, **kws):
 def error(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if self.isEnabledFor(LoggingLevel.ERROR):
-    self._log(LoggingLevel.ERROR, message, args, **kws)
+    self._log(LoggingLevel.ERROR, message, args, **kws) 
   if Exc is not None:
     if args:
       raise Exc(message % (args if len(args) > 1 else args[0]))
@@ -79,360 +90,92 @@ def fatal(self, message, *args, **kws):
   Exc, args = _getAnyException(args)
   if Exc is None: Exc = FatalError
   if self.isEnabledFor(LoggingLevel.FATAL):
-    self._log(LoggingLevel.FATAL, message, args, **kws)
+    self._log(LoggingLevel.FATAL, message, args, **kws) 
   if args:
     raise Exc(message % (args if len(args) > 1 else args[0]))
   else:
     raise Exc(message)
 
 logging.Logger.verbose = verbose
+logging.Logger.debug = debug
+logging.Logger.info = info
 logging.Logger.warning = warning
 logging.Logger.error = error
 logging.Logger.fatal = fatal
-logging.Logger.critical = fatal
 
-# This won't handle print and sys.stdout, but most of the cases are handled.
-_nl = True
+# The logger main object
+class Logger(object):
 
-def nlStatus():
-  global _nl
-  return _nl
+  #
+  # >>> Internal method to get the formatter custom obj.
+  #
+  def _getFormatter(self):
 
-def resetNlStatus():
-  global _nl
-  _nl = True
+    class Formatter(logging.Formatter):
 
-class StreamHandler2( logging.StreamHandler ):
-  """
-  Just in case we need a bounded method for emiting without newlines.
-  """
+      # Normal
+      gray = '0;30'
+      red = '0;31'
+      green = '0;32'
+      yellow = '0;33'
+      blue = '0;34'
+      magenta = '0;35'
+      cyan = '0;36'
+      white = '0;37'
+      
+      # Bold
+      bold_black = '1;30'
+      bold_red = '1;31'
+      bold_green = '1;32'
+      bold_yellow = '1;33'
+      bold_blue = '1;34'
+      bold_magenta = '1;35'
+      bold_cyan = '1;36'
+      bold_white = '1;37'
 
-  def __init__(self, handler):
-    """
-    Copy ctor
-    """
-    logging.StreamHandler.__init__(self)
-    self._name = handler._name
-    self.level = handler.level
-    self.formatter = handler.formatter
-    self.stream = handler.stream
-    # We use stream as carrier b/c other handlers may complicate things
-
-  def emit_no_nl(self, record):
-    """
-    Monkey patching to emit a record without newline.
-    """
-    #print '\n record', record
-    #print '\n record.__dict__', record.__dict__
-    try:
-      nl = record.nl
-    except AttributeError:
-      nl = True
-    try:
-      msg = self.format(record)
-      stream = self.stream
-      global _nl
-      fs = ''
-      if nl and not _nl:
-        fs += '\n'
-      _nl = nl
-      fs += '%s'
-      if nl: fs += '\n'
-
-      if not hasattr(logging, '_unicode'):
-        stream.write(fs % msg)
-      elif not logging._unicode: #if no unicode support...
-        stream.write(fs % msg)
-      else:
-        try:
-          if (isinstance(msg, unicode) and
-            getattr(stream, 'encoding', None)):
-            ufs = unicode(fs)
-            try:
-              stream.write(ufs % msg)
-            except UnicodeEncodeError:
-              #Printing to terminals sometimes fails. For example,
-              #with an encoding of 'cp1251', the above write will
-              #work if written to a stream opened or wrapped by
-              #the codecs module, but fail when writing to a
-              #terminal even when the codepage is set to cp1251.
-              #An extra encoding step seems to be needed.
-              stream.write((ufs % msg).encode(stream.encoding))
-          else:
-            stream.write(fs % msg)
-        except UnicodeError:
-          stream.write(fs % msg.encode("UTF-8"))
-      self.flush()
-    except (KeyboardInterrupt, SystemExit):
-      raise
-    except:
-      self.handleError(record)
-
-
-def _getFormatter():
-  class Formatter(logging.Formatter):
-    import numpy as np
-    gray, red, green, yellow, blue, magenta, cyan, white = ['0;%d' % int(d) for d in (30 + np.arange(8))]
-    bold_black, bold_red, bold_green, bold_yellow, bold_blue, bold_magenta, bold_cyan, bold_white = ['1;%d' % d for d in 90 + np.arange(8)]
-    gray = '1;30'
-    reset_seq = "\033[0m"
-    color_seq = "\033[%(color)sm"
-    colors = {
-               'VERBOSE':  gray,
-               'DEBUG':    cyan,
-               'INFO':     green,
-               'WARNING':  bold_yellow,
-               'ERROR':    red,
-               'CRITICAL': bold_red,
-               'FATAL':    bold_red,
-             }
-
-    # It's possible to overwrite the message color by doing:
-    # logger.info('MSG IN MAGENTA', extra={'color' : Logger._formatter.bold_magenta})
-
-    def __init__(self, msg, use_color = False):
-      if use_color:
+      reset_seq = "\033[0m"
+      color_seq = "\033[%(color)sm"
+      colors = {
+                 'VERBOSE':  gray,
+                 'DEBUG':    cyan,
+                 'INFO':     green,
+                 'WARNING':  bold_yellow,
+                 'ERROR':    red,
+                 'FATAL':    bold_red,
+               }
+  
+      # It's possible to overwrite the message color by doing:
+      # logger.info('MSG IN MAGENTA', extra={'color' : Logger._formatter.bold_magenta})
+  
+      def __init__(self, msg):
         logging.Formatter.__init__(self, self.color_seq + msg + self.reset_seq )
-      else:
-        logging.Formatter.__init__(self, msg)
-      self.use_color = use_color
+  
+      def format(self, record):
+        if not(hasattr(record,'nl')):
+          record.nl = True
+        levelname = record.levelname
+        if not 'color' in record.__dict__ and levelname in self.colors:
+          record.color = self.colors[levelname]
+        return logging.Formatter.format(self, record)
+  
+    formatter = Formatter("%(asctime)s | Py.%(name)-33.33s %(levelname)7.7s %(message)s")
+    return formatter
+  
+  def __init__(self, **kw):
+    self._level = retrieve_kw( kw, 'level', LoggingLevel.INFO)
+    self._logger = logging.getLogger(self.__class__.__name__)
+    ch = logging.StreamHandler()
+    ch.setLevel(self._level)
+    ch.setFormatter(self._getFormatter())
+    self._logger.handlers = []
+    self._logger.addHandler(ch)
+    self._logger.setLevel(self._level)
 
-    def format(self, record):
-      if not(hasattr(record,'nl')):
-        record.nl = True
-      levelname = record.levelname
-      if not 'color' in record.__dict__ and self.use_color and levelname in self.colors:
-        record.color = self.colors[levelname]
-      return logging.Formatter.format(self, record)
-  import os, sys
-  formatter = Formatter(
-                       "%(asctime)s | Py.%(name)-33.33s %(levelname)7.7s %(message)s",
-                       not(int(os.environ.get('RCM_NO_COLOR',1)) or not(sys.stdout.isatty()))
-                       )
-  return formatter
-
-# create console handler and set level to notset
-def _getConsoleHandler():
-  import sys
-  ch = logging.StreamHandler( sys.__stdout__ )
-  ch.setLevel( logging.NOTSET ) #  Minimal level in which the ch will print
-  # add formatter to ch
-  ch.setFormatter(_getFormatter())
-  return ch
-
-def _setOutputLevel(self, value):
-  logging.Logger.setLevel(self, value)
-  self._ringercore_logger_parent._level = value
-
-
-
-class Logger( object ):
-  """
-    Simple class for giving inherited classes logging capability as well as the
-    possibility for being serialized by pickle.
-    Logger will keep its logging level even after unpickled.
-  """
-
-  _formatter = _getFormatter()
-  _ch = _getConsoleHandler()
+  def setLevel(self, lvl):
+    self._logger.setLevel(lvl)
 
   def getLevel(self):
-    if hasattr( self, '_level' ):
-      return LoggingLevel.tostring( self._level )
-    else:
-      return LoggingLevel.INFO
+    return self._level
 
-  def setLevel(self, value):
-    from Gaugi.gtypes import NotSet
-    if value not in (None, NotSet):
-      self._level = LoggingLevel.retrieve( value )
-      if self._logger.level != self._level:
-        self._logger.setLevel(self._level)
-      #masterLevel.unhandle( self._logger )
-
-
-  level = property( getLevel, setLevel )
-
-  @classmethod
-  def getModuleLogger(cls, logName, logDefaultLevel = None):
-    """
-      Retrieve logging stream handler using logName and add a handler
-      to stdout if it does not have any handlers yet.
-      Format logging stream handler to output in the same format used by Athena
-      messages.
-    """
-    # Retrieve root logger
-    rootLogger = logging.getLogger()
-    rootHandlers = rootLogger.handlers
-    for rH in rootHandlers:
-      if isinstance(rH,logging.StreamHandler):
-        rH.setFormatter(cls._formatter)
-        # This may not be the desired behavior in some cases, but this fixes
-        # the streamer created by ipython notebook
-        import sys
-        if rH.stream is sys.stderr:
-          rH.stream = sys.stdout
-    # Retrieve the logger
-    logger = logging.getLogger( logName )
-    # Retrieve handles:
-    # TODO allow to set handlers filters
-    handlers = logger.handlers
-    if not cls._ch in handlers:
-      # add ch to logger
-      logger.addHandler(cls._ch)
-    if logDefaultLevel is not None: # Override this log level until next change of masterLevel value
-      logger.setLevel( logDefaultLevel )
-    return logger
-
-  def __init__(self, d = {}, **kw ):
-    """
-      Retrieve from args the logger, or create it using default configuration.
-    """
-    d.update( kw )
-    from Gaugi import retrieve_kw
-    from Gaugi.gtypes import NotSet
-    if 'level' in d:
-      if d['level'] not in (None, NotSet):
-        self._level = LoggingLevel.retrieve( retrieve_kw(d, 'level') )
-      else:
-        d.pop('level')
-    self._logger = retrieve_kw(d,'logger', None)  or \
-        Logger.getModuleLogger( d.pop('logName', self.__class__.__name__), LoggingLevel.retrieve( self.getLevel() ) )
-    self._logger.verbose('Initialiazing %s', self.__class__.__name__)
-    self._logger._ringercore_logger_parent = self
-    if self._logger.level != LoggingLevel.MUTE:
-      import types
-      self._logger.setLevel = types.MethodType( _setOutputLevel, self._logger )
-    else:
-      self.level = LoggingLevel.MUTE
-    def check_add( f ):
-      fname = f.__name__
-      self.__dict__['_' + fname] =  f
-    #l = self._logger
-    #for f in ( l.verbose, l.debug, l.info
-    #         , l.warning, l.error, l.critical
-    #         , l.fatal ):
-    #  check_add(f)
-
-  def __getattr__(self, attr):
-    if attr.startswith('_') and  attr.lstrip('_') in ( 'verbose', 'debug', 'info'
-                                                     , 'warning', 'error', 'critical'
-                                                     , 'fatal'):
-      return getattr( self._logger, attr.lstrip('_') )
-    raise AttributeError( 'AttributeError was raised inside an instance of Logger class while attempting to get: %s' % attr )
-
-  def __getstate__(self):
-    """
-      Makes logger invisible for pickle
-    """
-    odict = self.__dict__.copy() # copy the dict since we change it
-    if '_logger' in odict: del odict['_logger']         # remove logger entry
-    return odict
-
-  def __setstate__(self, d):
-    """
-      Add logger to object if it doesn't have one:
-    """
-    self.__dict__.update(d)   # update attributes
-    try:
-      if self._logger is None: # Also add a logger if it is set to None
-        self._logger = Logger.getModuleLogger(self.__class__.__name__, self.level )
-    except AttributeError:
-      self._logger = Logger.getModuleLogger(self.__module__, self.level )
-    self._logger.setLevel( self.level )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  def getModuleLogger(self):
+    return self._logger
