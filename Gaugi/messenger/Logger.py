@@ -178,11 +178,4 @@ class Logger(object):
     return self._level
 
   def getModuleLogger(self):
-    try:
-      return self._logger
-    except:
-      self._logger = logging.getLogger(self.__class__.__name__)
-      ch = logging.StreamHandler()
-      ch.setFormatter(self._getFormatter())
-      self._logger.handlers = []
-      self._logger.addHandler(ch)
+    return self._logger
