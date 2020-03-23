@@ -71,6 +71,10 @@ from . import streamable
 __all__.extend(streamable.__all__)
 from .streamable import *
 
+from . import tex
+__all__.extend(tex.__all__)
+from .tex import *
+
 
 
 

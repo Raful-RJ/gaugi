@@ -2,7 +2,7 @@
 __all__ = ['str_to_class','csvStr2List', 'get_attributes','printArgs', 
            'stdvector_to_list','list_to_stdvector', 'progressbar',
            'appendToOutput','retrieve_kw','checkForUnusedVars',
-					 'traverse']
+					 'traverse', 'Holder']
 
 import re, os, __main__
 import sys
@@ -15,7 +15,22 @@ import numpy as np
 from Gaugi.gtypes import NotSet
 from Gaugi import RCM_NO_COLOR, RCM_GRID_ENV
 
-
+class Holder( object ):
+  """
+  A simple object holder
+  """
+  def __init__(self, obj = None, replaceable = True):
+    self._obj = obj
+    self._replaceable = replaceable
+  def __call__(self):
+    return self._obj
+  def isValid(self):
+    return self._obj not in (None, NotSet)
+  def set(self, value):
+    if self._replaceable or not self.isValid():
+      self._obj = value
+    else:
+      raise RuntimeError("Cannot replace held object.")
 
 def retrieve_kw( kw, key, default = NotSet ):
   """
