@@ -9,19 +9,6 @@ __all__ = [ 'escape_decode', 'TexException', 'TexSessionStream', 'PDFTexOutput'
 from future.utils import with_metaclass
 
 
-
-try:
-  from StringIO import StringIO ## for Python 2
-except ImportError:
-  from io import StringIO ## for Python 3
-
-try:
-  basestring
-except NameError:
-  basestring = str
-
-
-
 def _writeline(self, *l, **kw ):
   l = list(l)
   if not l: l = ['']
@@ -29,7 +16,24 @@ def _writeline(self, *l, **kw ):
     l[0] += os.linesep
   self.write( *l, **kw )
 
-#StringIO.writeline = _writeline
+
+
+try:
+  from StringIO import StringIO ## for Python 2
+  StringIO.writeline = _writeline
+except ImportError:
+  from io import StringIO ## for Python 3
+  # Hack to StringIO since I can not include new attributes in python3
+  class StringIOExt(StringIO):
+    writeline = _writeline
+  StringIO = StringIOExt
+
+try:
+  basestring
+except NameError:
+  basestring = str
+
+
 import os, sys, traceback
 
 
@@ -41,55 +45,52 @@ from Gaugi.messenger.macros import *
 from Gaugi.tex.LimitedTypeList import LimitedTypeList, _LimitedTypeList____init__
 
 
-try:
-  from tex import escape_latex
-except ImportError:
-  # If tex package is not available, we will have to add this utilities from it
-  # to be able to escape latex codes without having to handle ourselves each
-  # one of the cases below:
-  _latex_special_chars = { 
-      u'$':  u'\\$', 
-      u'%':  u'\\%', 
-      u'&':  u'\\&', 
-      u'#':  u'\\#', 
-      u'_':  u'\\_', 
-      u'{':  u'\\{', 
-      u'}':  u'\\}', 
-      u'[':  u'{[}', 
-      u']':  u'{]}', 
-      u'"':  u"{''}", 
-      u'\\': u'\\textbackslash{}', 
-      u'~':  u'\\textasciitilde{}', 
-      u'<':  u'\\textless{}', 
-      u'>':  u'\\textgreater{}', 
-      u'^':  u'\\textasciicircum{}', 
-      u'`':  u'{}`',   # avoid ?` and !` 
-      u'\n': u'\\\\', 
-  } 
-  def escape_latex(s): 
-      r'''Escape a unicode string for LaTeX. 
-   
-      :Warning: 
-          The source string must not contain empty lines such as: 
-              - u'\n...' -- empty first line 
-              - u'...\n\n...' -- empty line in between 
-              - u'...\n' -- empty last line 
-   
-      :Parameters: 
-          - `s`: unicode object to escape for LaTeX 
-   
-      >>> s = u'\\"{}_&%a$b#\nc[]"~<>^`\\' 
-      >>> escape_latex(s) 
-      u"\\textbackslash{}{''}\\{\\}\\_\\&\\%a\\$b\\#\\\\c{[}{]}{''}\\textasciitilde{}\\textless{}\\textgreater{}\\textasciicircum{}{}`\\textbackslash{}" 
-      >>> print s 
-      \"{}_&%a$b# 
-      c[]"~<>^`\ 
-      >>> print escape_latex(s) 
-      \textbackslash{}{''}\{\}\_\&\%a\$b\#\\c{[}{]}{''}\textasciitilde{}\textless{}\textgreater{}\textasciicircum{}{}`\textbackslash{} 
+# If tex package is not available, we will have to add this utilities from it
+# to be able to escape latex codes without having to handle ourselves each
+# one of the cases below:
+_latex_special_chars = { 
+    u'$':  u'\\$', 
+    u'%':  u'\\%', 
+    u'&':  u'\\&', 
+    u'#':  u'\\#', 
+    u'_':  u'\\_', 
+    u'{':  u'\\{', 
+    u'}':  u'\\}', 
+    u'[':  u'{[}', 
+    u']':  u'{]}', 
+    u'"':  u"{''}", 
+    u'\\': u'\\textbackslash{}', 
+    u'~':  u'\\textasciitilde{}', 
+    u'<':  u'\\textless{}', 
+    u'>':  u'\\textgreater{}', 
+    u'^':  u'\\textasciicircum{}', 
+    u'`':  u'{}`',   # avoid ?` and !` 
+    u'\n': u'\\\\', 
+} 
+def escape_latex(s): 
+    r'''Escape a unicode string for LaTeX. 
+ 
+    :Warning: 
+        The source string must not contain empty lines such as: 
+            - u'\n...' -- empty first line 
+            - u'...\n\n...' -- empty line in between 
+            - u'...\n' -- empty last line 
+ 
+    :Parameters: 
+        - `s`: unicode object to escape for LaTeX 
+ 
+    >>> s = u'\\"{}_&%a$b#\nc[]"~<>^`\\' 
+    >>> escape_latex(s) 
+    u"\\textbackslash{}{''}\\{\\}\\_\\&\\%a\\$b\\#\\\\c{[}{]}{''}\\textasciitilde{}\\textless{}\\textgreater{}\\textasciicircum{}{}`\\textbackslash{}" 
+    >>> print s 
+    \"{}_&%a$b# 
+    c[]"~<>^`\ 
+    >>> print escape_latex(s) 
+    \textbackslash{}{''}\{\}\_\&\%a\$b\#\\c{[}{]}{''}\textasciitilde{}\textless{}\textgreater{}\textasciicircum{}{}`\textbackslash{} 
 
-      Taken from http://pythonhosted.org/tex/tex-pysrc.html#escape_latex
-      '''
-      return u''.join(_latex_special_chars.get(c, c) for c in s)
+    Taken from http://pythonhosted.org/tex/tex-pysrc.html#escape_latex
+    '''
+    return u''.join(_latex_special_chars.get(c, c) for c in s)
 
 
 def escape_decode( txt ):
@@ -194,46 +195,38 @@ class PDFTexOutput( TexSessionStream ):
   _outputExtension = 'pdf'
 
   def __init__( self, outputFile ):
-    self._hasConverter = True
     TexSessionStream.__init__( self, outputFile )
-    try:
-      import tex
-    except ImportError as e:
-      self._hasConverter = False
-      self._outputExtension = 'tex'
-      self._error( "PDFTexOutput will work as a standard TexSessionStream as there was an error when compiling tex code:\n%s", e)
+
 
   def __enter__( self ):
-    if self._hasConverter:
-      self.file = StringIO()
-      # Assign current _texSession to ourself, the last created TexOutputStream object
-      tss.set( self )
-    else:
-      TexSessionStream.__enter__( self )
+    self.file = StringIO()
+    # Assign current _texSession to ourself, the last created TexOutputStream object
+    tss.set( self )
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):
-    if self._hasConverter:
-      try:
-        latexCode = self.file.getvalue()
-        self.file.close()
-        from tex import latex2pdf
-        pdfCode = latex2pdf( latexCode, max_runs = 5 )
-        #pdfCode = measureCallTime( latex2pdf, latexCode, max_runs = 5
-        #                         , __logger = self._logger
-        #                         , __level = LoggingLevel.INFO
-        #                         , __msg = "Executing latex2pdf... ")
-        with open( self.outputFile, 'w' ) as f:
-          f.write( pdfCode )
-        del self.__dict__['file']
-      except Exception as e:
-        self._error( "PDFTexOutput will work as a standard TexSessionStream. Reason:\n%s", e)
-        with open( changeExtension( self.outputFile, 'tex'
+    latexCode = self.file.getvalue()
+    try:
+      self.file.close()
+      f = open(self.outputFile.replace('pdf','tex'),'w')
+      with open( changeExtension( self.outputFile, 'tex'
+                                  , knownFileExtensions = ['pdf']
+                                  , retryExtensions = [] ), 'w' ) as f:
+        f.write( str(latexCode) )
+      os.system( 'pdflatex %s &> mylog.log'%( changeExtension(self.outputFile, 'tex', knownFileExtensions=['pdf']) ) )
+      for ext in ['aux','log','out','snm','toc','tex','nav']:
+        try:
+          os.system('rm *.%s'% ext)
+        except:
+          pass
+    except Exception as e:
+      self._error( "PDFTexOutput will work as a standard TexSessionStream. Reason:\n%s", e)
+      with open( changeExtension( self.outputFile, 'tex'
                                   , knownFileExtensions = ['pdf'] 
                                   , retryExtensions = [] ), 'w' ) as f:
-          f.write( latexCode )
-    else:
-      TexSessionStream.__exit__( self, exc_type, exc_value, traceback )
+        f.write( latexCode )
+
+
 
 class TexCodeWriteException( TexException ):
 
@@ -566,12 +559,12 @@ class OverPic( TexObject ):
       graphics_option['width'] = str(width) + r"\textwidth" if isinstance(width, (int, float) ) else width
     if height:
       graphics_option['height'] = str(height) + r"\textheight" if isinstance(height, (int, float) ) else height
-    graphics_option = ','.join( [str(key) + '=' + str(val) for key, val in graphics_option.iteritems() ] )
+    graphics_option = ','.join( [str(key) + '=' + str(val) for key, val in graphics_option.iteitems() ] )
     if keepaspectratio:
       if graphics_option: self.graphics_option += ','
       graphics_option += 'keepaspectratio'
     graphics_option += ',' if moreGraphicsOptions else ''
-    graphics_option += ','.join( [str(key) + ('=' + str(val) if val else '') for key, val in moreGraphicsOptions.iteritems() ] )
+    graphics_option += ','.join( [str(key) + ('=' + str(val) if val else '') for key, val in moreGraphicsOptions.items() ] )
     self.graphics_option = graphics_option
     from Gaugi.utilities import traverse
     try:
@@ -606,7 +599,7 @@ class IncludeGraphics( TexObject ):
       graphics_option['width'] = str(width) + r"\textwidth" if isinstance(width, (int, float) ) else width
     if height:
       graphics_option['height'] = str(height) + r"\textheight" if isinstance(height, (int, float) ) else height
-    graphics_option = ','.join( [str(key) + '=' + str(val) for key, val in graphics_option.iteritems() ] )
+    graphics_option = ','.join( [str(key) + '=' + str(val) for key, val in graphics_option.items() ] )
     if keepaspectratio:
       if graphics_option: self.graphics_option += ','
       graphics_option += 'keepaspectratio'
@@ -708,7 +701,7 @@ class TexPackage( TexObject ):
       self.config += '['
       self.config += ','.join( args ) 
       self.config += ',' if kw and args else ''
-      self.config += ','.join( [str(key) + '=' + str(val) for key, val in kw.iteritems() ] )
+      self.config += ','.join( [str(key) + '=' + str(val) for key, val in kw.items() ] )
       self.config += ']'
     TexObject.__init__(self)
 
@@ -734,7 +727,7 @@ class TexPassOptionsToPackage( TexObject ):
     if args or kw:
       self.options += ','.join( args ) 
       self.options += ',' if kw and args else ''
-      self.options += ','.join( [str(key) + '=' + str(val) for key, val in kw.iteritems() ] )
+      self.options += ','.join( [str(key) + '=' + str(val) for key, val in kw.items() ] )
     else:
       raise TexException( self, 'Attempted to create TexPassOptionsToPackage without options.' )
     TexObject.__init__(self)

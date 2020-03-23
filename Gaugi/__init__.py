@@ -6,7 +6,6 @@ try:
 except NameError:
     xrange = range
 
-
 import os, multiprocessing
 RCM_GRID_ENV = int(os.environ.get('RCM_GRID_ENV',0))
 RCM_NO_COLOR = int(os.environ.get('RCM_NO_COLOR',1))
