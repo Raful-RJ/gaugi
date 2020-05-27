@@ -43,6 +43,10 @@ class TEventLoop( Logger ):
     self._entries = NotSet # total number of event inside of the ttree
     self._context = NotSet # Hold the event context
 
+    # Use this to hold the fist good
+    self._metadataInputFile = None
+
+
   def name(self):
     return self._name
 
@@ -52,8 +56,8 @@ class TEventLoop( Logger ):
 
     MSG_INFO( self, 'Initializing TEventLoop...')
 
-    # Use this to hold the fist good
-    metadataInputFile = None
+
+
     from Gaugi import progressbar
     ### Prepare to loop:
     self._t = ROOT.TChain()
@@ -86,6 +90,10 @@ class TEventLoop( Logger ):
         continue
       elif not isinstance(obj, ROOT.TTree):
         MSG_FATAL( self, "%s is not an instance of TTree!", treePath, ValueError)
+      
+      if not self._metadataInputFile:
+        self._metadataInputFile = (inputFile, treePath)
+      
       self._t.Add( inputFile+'/'+treePath )
     # Turn all branches off.
     self._t.SetBranchStatus("*", False)

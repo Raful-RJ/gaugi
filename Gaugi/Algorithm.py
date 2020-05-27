@@ -95,7 +95,7 @@ class Algorithm( Logger ):
 
   @wtd.setter
   def wtd(self, v):
-    self._wtd = StatusWatchDog.retrieve(v)
+    self._wtd = StatusWTD.retrieve(v)
 
 
   @property
