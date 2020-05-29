@@ -1,20 +1,21 @@
 
-# The Gaugi (2.0)
+# Gaugi
 
-This pakcage is used as core and provide some tools like messenger (Logger),
-macros, types, base tools, storegate services and other utilities.
-Used in prometheus framework.
+This package provide most part of the commom services used in many projects in the 
+LPS High Energy physics  projects.  
+
+
 
 ## Features:
 
+- Event loop using the ROOT services;
 - Algorithm service;
-- Storegate service;
-- Event context desing;
-- File reader (load and save);
-- Class streamable into dict;
+- Histograms and TTree storage services;
+- Event context design;
+- File system (Save and Load);
+- Class streamable service;
 - Logger;
-- Event loop;
-- ToolSvc and ToolMgr.
+- Tool Services.
 
 
 ## Extensions:
