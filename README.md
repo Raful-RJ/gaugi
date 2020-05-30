@@ -3,7 +3,6 @@
 
 [![PyPI Version](https://img.shields.io/pypi/v/Gaugi)](https://pypi.org/project/Gaugi/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/Gaugi)](https://github.com/jodafons/Gaugi)
-[![License](https://img.shields.io/github/license/jodafons/Gaugi)](https://github.com/jodafons/Gaugi)
 
 
 This package provide most part of the commom services used in many projects in the 
