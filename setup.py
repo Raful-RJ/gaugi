@@ -11,8 +11,8 @@ setuptools.setup(
   long_description = long_description,
   long_description_content_type="text/markdown",
   packages=setuptools.find_packages(),
-  author = 'Gabriel Gazola Milan, João Victor da Fonseca Pinto, Micael Verissimo ',
-  author_email = 'gabriel.gazola@poli.ufrj.br, jodafons@lps.ufrj.br, mverissi@lps.ufrj.br',
+  author = 'Gabriel Gazola Milan, João Victor da Fonseca Pinto, Micael Veríssimo de Araújo',
+  author_email = 'gabriel.gazola@poli.ufrj.br, jodafons@lps.ufrj.br, micael.verissimo@lps.ufrj.br',
   url = 'https://github.com/jodafons/Gaugi',
   keywords = ['framework', 'threading', 'shared resources', 'flexibility', 'python', 'online'],
   install_requires=[
