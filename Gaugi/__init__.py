@@ -65,6 +65,10 @@ from . import tex
 __all__.extend(tex.__all__)
 from .tex import *
 
+from . import storage
+__all__.extend(storage.__all__)
+from .storage import *
+
 
 
 # Import all root classes
@@ -81,10 +85,6 @@ if useROOT:
   from . import TEventLoop
   __all__.extend(TEventLoop.__all__)
   from .TEventLoop import *
-
-  from . import storage
-  __all__.extend(storage.__all__)
-  from .storage import *
 
   from . import monet
   __all__.extend(monet.__all__)
