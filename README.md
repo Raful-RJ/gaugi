@@ -31,17 +31,22 @@ git clone https://github.com/jodafons/Gaugi
 cd Gaugi && easy_install --user .
 ```
 
-
 ## Features:
 
-- Event loop using the ROOT services;
 - Algorithm service;
-- Histograms and TTree storage services;
 - Event context design;
 - File system (Save and Load);
-- Class streamable service;
 - Logger;
-- Tool Services.
+- Tool Services;
+- Class streamable service;
+
+
+## Extra Features (ROOT mandatory):
+
+- Event loop services;
+- Histograms and TTree storage services;
+- Monet ATLAS plots.
+
 
 
 ## Extensions:

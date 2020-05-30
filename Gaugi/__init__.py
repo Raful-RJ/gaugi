@@ -21,14 +21,9 @@ from . import utilities
 __all__.extend(utilities.__all__)
 from .utilities import *
 
-
 from . import messenger
 __all__.extend(messenger.__all__)
 from .messenger import *
-
-from . import storage
-__all__.extend(storage.__all__)
-from .storage import *
 
 from . import StatusCode
 __all__.extend(StatusCode.__all__)
@@ -62,10 +57,6 @@ from . import Algorithm
 __all__.extend(Algorithm.__all__)
 from .Algorithm import *
 
-from . import TEventLoop
-__all__.extend(TEventLoop.__all__)
-from .TEventLoop import *
-
 from . import streamable
 __all__.extend(streamable.__all__)
 from .streamable import *
@@ -76,11 +67,32 @@ from .tex import *
 
 
 
+# Import all root classes
+try:
+  import ROOT
+  useROOT=True
+except:
+  useROOT=False
+  print ('WARNING: ROOT not found. You will not be able to use the TEventLoop, storage and monet  services provied by the gaugi core.')
 
-__gaugi__version__ = '2.0'
 
-def print_gaugi_version():
-  from Gaugi.enumerations import Color
-  print( ("%sGaugi core (%s)%s") % (TexColor.CWHITE,__gaugi__version__,TexColor.CEND) )
-  print( ("%sMaintainer: jodafons@cern.ch%s") % (TexColor.CWHITE, TexColor.CEND) )
-#print_gaugi_version()
+if useROOT:
+  print('Using all sub packages with ROOT dependence')
+  from . import TEventLoop
+  __all__.extend(TEventLoop.__all__)
+  from .TEventLoop import *
+
+  from . import storage
+  __all__.extend(storage.__all__)
+  from .storage import *
+
+  from . import monet
+  __all__.extend(monet.__all__)
+  from .moent import *
+
+
+
+
+
+
+

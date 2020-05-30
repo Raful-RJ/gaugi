@@ -6,13 +6,6 @@ from Gaugi.messenger.macros import *
 from Gaugi import StatusCode,StatusTool,StatusWTD
 from Gaugi.gtypes import NotSet
 
-# Import all root classes
-try:
-  import ROOT
-except:
-  pass
-  #print ('WARNING: ROOT not found. You will not be able to use the TEventLoop services provied by the gaugi core.')
-
 
 class TEventLoop( Logger ):
 
@@ -90,10 +83,10 @@ class TEventLoop( Logger ):
         continue
       elif not isinstance(obj, ROOT.TTree):
         MSG_FATAL( self, "%s is not an instance of TTree!", treePath, ValueError)
-      
+
       if not self._metadataInputFile:
         self._metadataInputFile = (inputFile, treePath)
-      
+
       self._t.Add( inputFile+'/'+treePath )
     # Turn all branches off.
     self._t.SetBranchStatus("*", False)
