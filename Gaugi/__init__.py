@@ -88,7 +88,7 @@ if useROOT:
 
   from . import monet
   __all__.extend(monet.__all__)
-  from .moent import *
+  from .monet import *
 
 
 
