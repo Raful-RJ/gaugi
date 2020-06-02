@@ -49,8 +49,7 @@ class TEventLoop( Logger ):
 
     MSG_INFO( self, 'Initializing TEventLoop...')
 
-
-
+    import ROOT
     from Gaugi import progressbar
     ### Prepare to loop:
     self._t = ROOT.TChain()
@@ -109,8 +108,6 @@ class TEventLoop( Logger ):
     else:
       MSG_INFO( self, 'The StoraGate was created for ohter service. Using the service setted by client.')
 
-
-
     MSG_INFO( self, 'Initializing all tools...')
     from Gaugi import ToolSvc as toolSvc
     self._alg_tools = toolSvc.getTools()
@@ -127,8 +124,6 @@ class TEventLoop( Logger ):
       if alg.initialize().isFailure():
         MSG_FATAL( self, "Impossible to initialize the tool name: %s",alg.name)
 
-
-
     return StatusCode.SUCCESS
 
 
@@ -142,12 +137,12 @@ class TEventLoop( Logger ):
     if not self._mute_progressbar:
       step = int(entries/100) if int(entries/100) > 0 else 1
       for entry in progressbar(range(self._entries), entries, step=step, prefix= "Looping over entries ", logger=self._logger):
-        if self._nov < entry:
+        if self.nov < entry:
           break
         self.process(entry)
     else:
       for entry in range(self._entries):
-        if self._nov < entry:
+        if self.nov < entry:
           break
         self.process(entry)
     return StatusCode.SUCCESS
