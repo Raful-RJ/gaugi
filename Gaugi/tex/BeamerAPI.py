@@ -6,6 +6,11 @@ __all__ = [ 'BeamerSlide', 'BeamerTexReport'
           , 'BeamerOutlineSlide', 'outlineSession', 'BeamerTexReportTemplate1'
           , 'BeamerTexReportTemplate2','gcb']
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
 import os
 from Gaugi.utilities import checkForUnusedVars, Holder, retrieve_kw 
 from Gaugi.gtypes import NotSet
@@ -217,7 +222,7 @@ class BeamerMultiFigureSlide( BeamerSlide ):
       paths += [None] * ( ( nDivWidth * nDivHeight ) - len(paths) )
     try:
       from Gaugi.utilities import traverse
-      _, _, _, _, depth = traverse( texts ).next()
+      _, _, _, _, depth = next(traverse( texts ))
     except (GeneratorExit, StopIteration):
       depth = 0
     if depth == 0:
@@ -235,7 +240,7 @@ class BeamerMultiFigureSlide( BeamerSlide ):
       config = r'T,totalwidth=%f\textwidth' % usedWidth
     # Now we are sure that texts is a 3D object, add empty objets to the 1st dimension:
     texts += [None] * ( ( nDivWidth * nDivHeight) - len(texts) )
-    paths = map(lambda path: path if (os.path.exists( os.path.expandvars( os.path.expanduser( path ) ) ) if isinstance(path, basestring) else False) else None, paths)
+    paths = list(map(lambda path: path if (os.path.exists( os.path.expandvars( os.path.expanduser( path ) ) ) if isinstance(path, basestring) else False) else None, paths))
     # Now start slide figure objects creation:
     fWidth = usedWidth / nDivWidth
     fHeight = usedHeight / nDivHeight
@@ -247,7 +252,7 @@ class BeamerMultiFigureSlide( BeamerSlide ):
       Column( 0 ) # We need to create a virtual column to fix OverPic not showing text in the first column
       for wIdx in range(nDivWidth):
         Column( fWidth )
-        if not any([paths[i] for i in map(lambda hIdx: calcIdx( hIdx, wIdx ), range(nDivHeight))]):
+        if not any([paths[i] for i in list(map(lambda hIdx: calcIdx( hIdx, wIdx ), range(nDivHeight)))]):
           GenericTexCode( code = r'\vspace{\textheight}' )
           continue
         for hIdx in range(nDivHeight):

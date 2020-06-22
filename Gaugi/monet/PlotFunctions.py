@@ -1,4 +1,15 @@
-from monet.TAxisFunctions import *
+
+
+__all__ = ["FullFormatCanvasDefault", "AddXAxisWorkaround", "ConvertToDifferential", "AddHistogram", 
+    "SetAxisLabels", "SetYAxisLimits", "SetMarkerStyles", "SetColors", "GetLuminosityText", "GetSqrtsText", 
+    "GetAtlasInternalText", "DrawText" , "MakeLegend", "FormatCanvasAxes", "SetupStyle", "RatioCanvas",
+    "SetLeftMargin", "SetRightMargin", "GetTopPad", "GetBotPad", "AddHistogramTop", "AddHistogramBot", 
+    "AddRatio", "GetHistogramsMinMax", "AddHorizontalLine", "AddRightAxisObj", "AddShadedProfile",
+    "AddBinLines", "GetNDC", "FixLength", "ReducePowerOf10Str", "MergeLowCount", "AddOutOfBoundArrows" ]
+
+
+
+from Gaugi.monet.TAxisFunctions import *
 from ROOT import TColor, kGray
 
 global tobject_collector;
@@ -925,7 +936,7 @@ def AddBinLines(can,hist,useCanvasHistsMax=True,useHistMax=False, horizotalLine=
         #minValue = min([o.GetBinContent(o.GetMinimumBin()) - o.GetBinError(o.GetMinimumBin()) for o in listOfPlottedObjects])
 
     if useCanvasHistsMax:
-        from TAxisFunctions import GetYaxisRanges
+        from Gaugi.monet.TAxisFunctions import GetYaxisRanges
         _, maxValue = GetYaxisRanges(can,check_all=True,ignorezeros=False,ignoreErrors=False)
     elif useHistMax:
         maxValue = hist.GetBinContent(hist.GetMaximumBin())
