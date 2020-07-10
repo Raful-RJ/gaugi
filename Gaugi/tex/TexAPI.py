@@ -214,6 +214,7 @@ class PDFTexOutput( TexSessionStream ):
                                   , retryExtensions = [] ), 'w' ) as f:
         f.write( str(latexCode) )
       os.system( 'pdflatex %s &> mylog.log'%( changeExtension(self.outputFile, 'tex', knownFileExtensions=['pdf']) ) )
+      os.system( 'pdflatex %s &> mylog.log'%( changeExtension(self.outputFile, 'tex', knownFileExtensions=['pdf']) ) )
       for ext in ['aux','log','out','snm','toc','tex','nav']:
         try:
           os.system('rm *.%s'% ext)
