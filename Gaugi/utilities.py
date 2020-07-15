@@ -207,14 +207,14 @@ def progressbar(it, count ,prefix="", size=60, step=1, disp=True, logger = None,
 
         record = logger.makeRecord(logger.name, level, fn, lno, 
                                    "%s|%s%s| %i/%i\r",
-                                   (prefix, "█"*x, "-"*(size-x), _i, count,), 
+                                   (prefix, "#"*x, "-"*(size-x), _i, count,), 
                                    None, 
                                    func=func)
         record.nl = False
         # emit message
         logger.handle(record)
     else:
-      sys.stdout.write("%s|%s%s| %i/%i\r" % (prefix, "█"*x, "-"*(size-x), _i, count))
+      sys.stdout.write("%s|%s%s| %i/%i\r" % (prefix, "#"*x, "-"*(size-x), _i, count))
       sys.stdout.flush()
   # end of (_show)
   # prepare for looping:
