@@ -99,7 +99,6 @@ class TEventLoop( Logger ):
     from Gaugi import EventContext
     self._context = EventContext(self._t)
 
-
     # Create the StoreGate service
     if not self._storegateSvc:
       MSG_INFO( self, "Creating StoreGate...")
@@ -107,23 +106,8 @@ class TEventLoop( Logger ):
       self._storegateSvc = StoreGate( self._ofile , level = self._level)
     else:
       MSG_INFO( self, 'The StoraGate was created for ohter service. Using the service setted by client.')
-
-    MSG_INFO( self, 'Initializing all tools...')
-    from Gaugi import ToolSvc as toolSvc
-    self._alg_tools = toolSvc.getTools()
-    for alg in self._alg_tools:
-      if alg.status is StatusTool.DISABLE:
-        continue
-      # Retrieve all services
-      alg.level = self._level
-      alg.setContext( self.getContext() )
-      alg.setStoreGateSvc( self.getStoreGateSvc() )
-      alg.dataframe = self._dataframe
-      if alg.isInitialized():
-        continue
-      if alg.initialize().isFailure():
-        MSG_FATAL( self, "Impossible to initialize the tool name: %s",alg.name)
-
+    
+    
     return StatusCode.SUCCESS
 
 
