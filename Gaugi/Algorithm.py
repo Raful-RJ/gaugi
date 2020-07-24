@@ -3,15 +3,18 @@ __all__ = ['Algorithm']
 
 from Gaugi.messenger import  Logger
 from Gaugi.messenger.macros import *
-from Gaugi import EnumStringification, NotSet
-from Gaugi import StatusCode
 from Gaugi.enumerations import StatusTool, StatusWTD
+from Gaugi import EnumStringification
+from Gaugi import NotSet
+from Gaugi import StatusCode
+from Gaugi import Property
+
 
 
 # Base class used for all tools for this framework
 class Algorithm( Logger ):
 
-  def __init__(self, name):
+  def __init__(self, name, allow_properties=[]):
     Logger.__init__(self)
     self._name = name
     # flags
@@ -23,6 +26,42 @@ class Algorithm( Logger ):
     self._context   = NotSet
     self._storegateSvc = NotSet
     self._dataframe = NotSet
+
+		# property 
+		self.__property = {}
+
+
+
+
+  #
+  # Declare property
+  #
+  def declareProperty( self, key, value = None, comment = "" ):
+    if not key in self.__property.keys():
+      self.__properties[ key ] = Property(key, value, comment)
+    else:
+      MSG_FATAL( self, "Property with name %s was configure before.", key )
+
+
+	#
+	# Set the value of the property
+	#	 
+  def setProperty( self, key, value ):
+    if key in self.__property:
+      self.__property[key].setValue(value)
+    else:
+      MSG_FATAL( self, "Property with name %s is not in the %s object", key, self.__class__.__name__)
+
+
+ 	#
+	# Get the value of the property
+	#
+  def getProperty( self, key ):
+    if key in self.__property.keys():
+      return self.__property[key].value()
+    else:
+      MSG_FATAL( self, "Property with name %s is not in the  %s object", key, self.__class__.__name__)
+
 
 
 

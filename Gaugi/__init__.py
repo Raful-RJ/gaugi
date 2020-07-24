@@ -17,6 +17,10 @@ from . import gtypes
 __all__.extend(gtypes.__all__)
 from .gtypes import *
 
+from . import Property
+__all__.extend(Property.__all__)
+from .Property import *
+
 from . import utilities
 __all__.extend(utilities.__all__)
 from .utilities import *
