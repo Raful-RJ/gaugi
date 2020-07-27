@@ -27,8 +27,8 @@ class Algorithm( Logger ):
     self._storegateSvc = NotSet
     self._dataframe = NotSet
 
-		# property 
-		self.__property = {}
+    # property 
+    self.__property = {}
 
 
 
