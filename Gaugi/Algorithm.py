@@ -14,7 +14,7 @@ from Gaugi import Property
 # Base class used for all tools for this framework
 class Algorithm( Logger ):
 
-  def __init__(self, name, allow_properties=[]):
+  def __init__(self, name):
     Logger.__init__(self)
     self._name = name
     # flags
@@ -38,7 +38,8 @@ class Algorithm( Logger ):
   #
   def declareProperty( self, key, value = None, comment = "" ):
     if not key in self.__property.keys():
-      self.__properties[ key ] = Property(key, value, comment)
+      self.__property[ key ] = Property(key, value, comment)
+      self.__dict__[key] = value
     else:
       MSG_FATAL( self, "Property with name %s was configure before.", key )
 
