@@ -14,7 +14,7 @@ class TEventLoop( Logger ):
     # Retrieve all information needed
     Logger.__init__(self, **kw)
     from Gaugi import retrieve_kw
-    self._fList      = retrieve_kw( kw, 'inputFiles', NotSet                          )
+    fList            = retrieve_kw( kw, 'inputFiles', []                              )
     self._ofile      = retrieve_kw( kw, 'outputFile', "histos.root"                   )
     self._treePath   = retrieve_kw( kw, 'treePath'  , NotSet                          )
     self._dataframe  = retrieve_kw( kw, 'dataframe' , NotSet                          )
@@ -22,10 +22,16 @@ class TEventLoop( Logger ):
     self._mute_progressbar   = retrieve_kw( kw, 'mute_progressbar', False             )
     self._level = LoggingLevel.retrieve( retrieve_kw(kw, 'level', LoggingLevel.INFO ) )
     self._name       = name
-    if self._fList:
-      from Gaugi import csvStr2List, expandFolders
-      self._fList = csvStr2List ( self._fList )
-      self._fList = expandFolders( self._fList )
+    
+
+    from Gaugi import csvStr2List, expandFolders
+    files = []
+    for path in fList:
+      # Need to loop over for LCG grid
+      for f in path.split(','):
+        files.extend( expandFolders( f ) )
+    self._fList = files
+
 
 
     import collections
