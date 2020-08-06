@@ -89,9 +89,9 @@ class EDM( Logger ):
       # fix the AddressOf in new ROOT versions we need only one argument
       from ROOT import AddressOf
       try:
-        tree.SetBranchAddress( varname, AddressOf(holder) )
-      except:
         tree.SetBranchAddress( varname, AddressOf(holder, pointername) )
+      except:
+        tree.SetBranchAddress( varname, AddressOf(holder) )
       MSG_DEBUG( self, "Set %s branch address on %s", varname, tree )
     else:
       MSG_DEBUG( self, "Already set %s branch address on %s", varname, tree)
