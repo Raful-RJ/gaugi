@@ -86,8 +86,12 @@ class EDM( Logger ):
     " Set tree branch varname to holder "
     if not tree.GetBranchStatus(varname):
       tree.SetBranchStatus( varname, True )
+      # fix the AddressOf in new ROOT versions we need only one argument
       from ROOT import AddressOf
-      tree.SetBranchAddress( varname, AddressOf(holder, pointername) )
+      try:
+        tree.SetBranchAddress( varname, AddressOf(holder) )
+      except:
+        tree.SetBranchAddress( varname, AddressOf(holder, pointername) )
       MSG_DEBUG( self, "Set %s branch address on %s", varname, tree )
     else:
       MSG_DEBUG( self, "Already set %s branch address on %s", varname, tree)
