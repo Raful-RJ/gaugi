@@ -160,10 +160,10 @@ def SetYAxisLimits(can,low,high) :
 
 def SetMarkerStyles(can,these_styles=[],these_sizes=[],alsoBottom=True) :
     if not these_styles :
-        these_styles = [20 for i in xrange(30)]
+        these_styles = [20 for i in range(30)]
 
     if not these_sizes :
-        these_sizes = [1 for i in xrange(30)]
+        these_sizes = [1 for i in range(30)]
 
     the_primitives = can.GetListOfPrimitives()
     if can.GetPrimitive('pad_top') :
