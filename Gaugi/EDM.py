@@ -3,14 +3,15 @@ __all__ = ['EDM']
 
 from Gaugi.messenger import Logger
 from Gaugi.messenger.macros import *
-from Gaugi import NotSet, EnumStringification, StatusCode
+from Gaugi import EnumStringification, StatusCode
+from ROOT import AddressOf
 
 
 
 class EDM( Logger ):
 
   # set the default skimmed dataframe
-  _dataframe = NotSet
+  _dataframe = None
   
   def __init__(self):
     
@@ -18,9 +19,9 @@ class EDM( Logger ):
     self._idx = 0
     self._is_hlt = False
     self._decoration = dict()
-    self._tree  = NotSet
-    self._event = NotSet
-    self._context = NotSet
+    self._tree  = None
+    self._event = None
+    self._context = None
     # this is used for metadata properties
     self._useMetadataParams = False
     self._metadataParams = {}
@@ -87,7 +88,7 @@ class EDM( Logger ):
     if not tree.GetBranchStatus(varname):
       tree.SetBranchStatus( varname, True )
       # fix the AddressOf in new ROOT versions we need only one argument
-      from ROOT import AddressOf
+
       try:
         tree.SetBranchAddress( varname, AddressOf(holder, pointername) )
       except:
@@ -155,9 +156,14 @@ class EDM( Logger ):
     return self._idx
 
 
+  #
+  # Link
+  #
   def link( self, branches ):
     # loop over branches
     for branch in branches:
-      self.setBranchAddress( self._tree, branch  , self._event)
-      self._branches.append(branch) # hold all branches from the body class
- 
+        try:
+            self.setBranchAddress( self._tree, branch  , self._event)
+            self._branches.append(branch) # hold all branches from the body class
+        except:
+            MSG_WARNING( self, "It's not possible to set this branche: %s", branch )
