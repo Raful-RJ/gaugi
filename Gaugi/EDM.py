@@ -155,3 +155,9 @@ class EDM( Logger ):
     return self._idx
 
 
+  def link( self, branches ):
+    # loop over branches
+    for branch in branches:
+      self.setBranchAddress( self._tree, branch  , self._event)
+      self._branches.append(branch) # hold all branches from the body class
+ 
