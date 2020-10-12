@@ -2,7 +2,7 @@
 __all__ = ['str_to_class','csvStr2List', 'get_attributes','printArgs', 
            'stdvector_to_list','list_to_stdvector', 'progressbar',
            'appendToOutput','retrieve_kw','checkForUnusedVars',
-					 'traverse', 'Holder', 'fixArgParser']
+					 'traverse', 'Holder']
 
 import re, os, __main__
 import sys
@@ -14,18 +14,6 @@ import inspect
 import numpy as np
 from Gaugi.gtypes import NotSet
 from Gaugi import RCM_NO_COLOR, RCM_GRID_ENV
-
-
-
-def fixArgParser():
-  try:
-    # in case we have root installed here
-    import ROOT
-    from ROOT import gROOT
-    ROOT.PyConfig.IgnoreCommandLineOptions = True
-    gROOT.SetBatch()
-  except:
-    pass
 
 
 
