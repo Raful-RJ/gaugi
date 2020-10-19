@@ -53,10 +53,6 @@ from . import Service
 __all__.extend(Service.__all__)
 from .Service import *
 
-from . import EDM
-__all__.extend(EDM.__all__)
-from .EDM import *
-
 from . import Algorithm
 __all__.extend(Algorithm.__all__)
 from .Algorithm import *
@@ -93,6 +89,10 @@ if useROOT:
   from . import monet
   __all__.extend(monet.__all__)
   from .monet import *
+
+  from . import EDM
+  __all__.extend(EDM.__all__)
+  from .EDM import *
 
 
 
