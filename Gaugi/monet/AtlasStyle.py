@@ -3,7 +3,7 @@ __all__ = ["SetAtlasStyle","ATLASLabel","ATLASLumiLabel","AtlasTemplate1","setLe
 
 def SetAtlasStyle ():
   print ("\nApplying ATLAS style settings...")
-  from ROOT import gROOT, TStyle
+  from ROOT import gROOT, gStyle
   icol=0
   gStyle.SetFrameBorderMode(icol)
   gStyle.SetFrameFillColor(icol)
