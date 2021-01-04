@@ -25,6 +25,7 @@ tGray = TColor.GetColorTransparent( kGray+2, .3 )
 
     
 def AddATLASLabel(canvas, x, y, text):
+    from Gaugi.monet.AtlasStyle import ATLASLabel
     ATLASLabel(x,y,text)
     canvas.Modified()
     canvas.Update()
