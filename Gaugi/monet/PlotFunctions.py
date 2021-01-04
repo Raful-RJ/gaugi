@@ -5,7 +5,8 @@ __all__ = ["FullFormatCanvasDefault", "AddXAxisWorkaround", "ConvertToDifferenti
     "GetAtlasInternalText", "DrawText" , "MakeLegend", "FormatCanvasAxes", "SetupStyle", "RatioCanvas",
     "SetLeftMargin", "SetRightMargin", "GetTopPad", "GetBotPad", "AddHistogramTop", "AddHistogramBot", 
     "AddRatio", "GetHistogramsMinMax", "AddHorizontalLine", "AddRightAxisObj", "AddShadedProfile",
-    "AddBinLines", "GetNDC", "FixLength", "ReducePowerOf10Str", "MergeLowCount", "AddOutOfBoundArrows" ]
+    "AddBinLines", "GetNDC", "FixLength", "ReducePowerOf10Str", "MergeLowCount", "AddOutOfBoundArrows",
+    "AddATLASLabel", "AddTexLabel"]
 
 
 
@@ -21,6 +22,24 @@ def clear_objects():
 
 
 tGray = TColor.GetColorTransparent( kGray+2, .3 )
+
+    
+def AddATLASLabel(canvas, x, y, text):
+    ATLASLabel(x,y,text)
+    canvas.Modified()
+    canvas.Update()
+    
+def AddTexLabel(canvas, x,y,text,color=1, textfont=42, textsize=0.1):
+    from ROOT import TLatex
+    tex = TLatex()
+    tex.SetNDC()
+    tex.SetTextFont(textfont)
+    tex.SetTextColor(color)
+    tex.SetTextSize(textsize)
+    tex.DrawLatex(x,y,text)
+    canvas.Modified()
+    canvas.Update()
+
 
 ##
 ## FullFormatCanvasDefault is a collection of functions for easy "1-step" plotting.

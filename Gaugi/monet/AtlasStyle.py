@@ -75,29 +75,29 @@ from ROOT import TLatex, gPad
 
 def ATLASLabel(x,y,text,color=1):
   l = TLatex()
-  l.SetNDC();
-  l.SetTextFont(72);
-  l.SetTextColor(color);
-  delx = 0.115*696*gPad.GetWh()/(472*gPad.GetWw());
-  l.DrawLatex(x,y,"ATLAS");
+  l.SetNDC()
+  l.SetTextFont(72)
+  l.SetTextColor(color)
+  delx = 0.115*696*gPad.GetWh()/(472*gPad.GetWw())
+  l.DrawLatex(x,y,"ATLAS")
   if True:
-    p = TLatex();
-    p.SetNDC();
-    p.SetTextFont(42);
-    p.SetTextColor(color);
-    p.DrawLatex(x+delx,y,text);
+    p = TLatex()
+    p.SetNDC()
+    p.SetTextFont(42)
+    p.SetTextColor(color)
+    p.DrawLatex(x+delx,y,text)
     #p.DrawLatex(x,y,"#sqrt{s}=900GeV");
 
 def ATLASLumiLabel(x,y,lumi=None,color=1):
     l = TLatex()
-    l.SetNDC();
-    l.SetTextFont(42);
-    l.SetTextSize(0.045);
-    l.SetTextColor(color);
-    dely = 0.115*472*gPad.GetWh()/(506*gPad.GetWw());
+    l.SetNDC()
+    l.SetTextFont(42)
+    l.SetTextSize(0.045)
+    l.SetTextColor(color)
+    dely = 0.115*472*gPad.GetWh()/(506*gPad.GetWw())
     label="#sqrt{s}=13 TeV"
     if lumi is not None: label += ", #intL dt = " + lumi + " fb^{-1}"
-    l.DrawLatex(x,y-dely,label);
+    l.DrawLatex(x,y-dely,label)
 
 
 def setLegend1(leg):
