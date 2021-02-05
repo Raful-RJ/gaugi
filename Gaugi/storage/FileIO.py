@@ -327,7 +327,11 @@ def load(filename, decompress = 'auto', allowTmpFile = True, useHighLevelObj = F
       # This is necessary for python 3
       o = convert(o)
     except: # python 2
-      o = cPickle.load(f)
+      try:
+          o = cPickle.load(f)
+      except:
+          import pickle5 as cPickle5
+          o = cPickle5.load(f)
       f.close()
       o = transformDataRawData( o, filename, None )
 
